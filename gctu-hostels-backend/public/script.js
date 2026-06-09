@@ -32,6 +32,45 @@ function setupToggles() {
 
 setupToggles();
 
+
+// Add this function here
+function checkPasswordRequirements(password) {
+    const requirements = {
+        length: password.length >= 8,
+        upper: /[A-Z]/.test(password),
+        lower: /[a-z]/.test(password),
+        number: /[0-9]/.test(password),
+        special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+    
+    const elements = {
+        length: document.getElementById('req-length'),
+        upper: document.getElementById('req-upper'),
+        lower: document.getElementById('req-lower'),
+        number: document.getElementById('req-number'),
+        special: document.getElementById('req-special')
+    };
+    
+    for (const [key, element] of Object.entries(elements)) {
+        if (requirements[key]) {
+            element.classList.add('valid');
+            element.classList.remove('invalid');
+        } else {
+            element.classList.add('invalid');
+            element.classList.remove('valid');
+        }
+    }
+    
+    return requirements.length && requirements.upper && requirements.lower && requirements.number && requirements.special;
+}
+
+const signupPassword = document.getElementById('password');
+if (signupPassword) {
+    signupPassword.addEventListener('input', (e) => {
+        checkPasswordRequirements(e.target.value);
+    });
+}
+
 function updateOtpTimerDisplay() {
     const minutes = Math.floor(otpTimeLeft / 60);
     const seconds = otpTimeLeft % 60;
@@ -188,10 +227,10 @@ SignupForm.addEventListener('submit', async function(e) {
         return;
     }
     
-    if (password.length < 8) {
-        errorDisplay.innerText = "Password must be at least 6 characters.";
-        return;
-    }
+    if (!checkPasswordRequirements(password)) {
+    errorDisplay.innerText = 'Password does not meet requirements';
+    return;
+}
 
     if (password !== confirmPassword) {
         errorDisplay.innerText = "Passwords do not match! Try again.";
