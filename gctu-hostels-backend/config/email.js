@@ -1,16 +1,28 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
 require('dotenv').config();
+
+// Force IPv4 for Gmail SMTP - MUST be BEFORE transporter creation
+const originalResolve = dns.resolve;
+dns.resolve = function(hostname, callback) {
+    if (hostname === 'smtp.gmail.com') {
+        // Gmail's IPv4 address
+        callback(null, ['142.250.27.108']);
+    } else {
+        originalResolve(hostname, callback);
+    }
+};
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,      // SSL directly
+    port: 587,
+    secure: false,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
-    family: 4,
-    connectionTimeout: 10000
+    connectionTimeout: 10000,
+    socketTimeout: 10000
 });
 
 async function sendEmail(to, subject, html) {
