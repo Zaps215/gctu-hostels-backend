@@ -23,7 +23,7 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
-app.use(express.static('public'));
+//serving frontend from backend: app.use(express.static('public'));
 
 // Session middleware (FIXED syntax)
 app.use(session({
