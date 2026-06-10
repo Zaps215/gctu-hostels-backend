@@ -3,21 +3,16 @@ require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // true for 465, false for other ports
+    port: 465,         // Changed from 587
+    secure: true,      // Changed to true for port 465
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
-    // Increased timeouts slightly to accommodate Render's cold starts
-    connectionTimeout: 15000, 
-    socketTimeout: 15000,
-    greetingTimeout: 15000,
-    // This tells Nodemailer how to handle underlying stream issues
+    connectionTimeout: 20000, // Giving it 20 seconds
+    socketTimeout: 20000,
+    greetingTimeout: 20000,
     tls: {
-        // Force Node to prefer IPv4 when establishing the TLS stream
-        family: 4,
-        // Prevents failure if Render has local SSL handshake discrepancies
         rejectUnauthorized: false 
     }
 });
