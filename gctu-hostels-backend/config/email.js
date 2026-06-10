@@ -9,6 +9,10 @@ const transporter = nodemailer.createTransport({
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     }
+
+    family: 4,          // Force IPv4 (critical fix)
+    connectionTimeout: 10000,  // 10 seconds timeout
+    greetingTimeout: 10000
 });
 
 async function sendEmail(to, subject, html) {
