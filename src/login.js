@@ -28,7 +28,7 @@ loginForm.addEventListener('submit', async function(e) {
     try {
         console.log("Sending login request to backend...");
         // Send to backend API (NOT localStorage)
-        const response = await fetch('/api/login', {
+        const response = await fetch('https://gctu-hostels-backend.onrender.com/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',

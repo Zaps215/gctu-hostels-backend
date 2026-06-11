@@ -847,7 +847,7 @@
         }
         if (confirmBtn) {
             confirmBtn.onclick = async () => {
-                await fetch('/api/logout', {
+                await fetch('https://gctu-hostels-backend.onrender.com/api/logout', {
                     method: 'POST',
                     credentials: 'include'
                 });
@@ -865,7 +865,7 @@
             console.log('Homepage loaded, checking session...');
             console.log('Document cookie:', document.cookie);
             try {
-                const response = await fetch('/api/me', {
+                const response = await fetch('https://gctu-hostels-backend.onrender.com/api/me', {
                     credentials: 'include'  // ← important: sends the cookie
                 });
 

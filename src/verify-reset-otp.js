@@ -60,7 +60,7 @@ form.addEventListener('submit', async (e) => {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
     
     try {
-        const response = await fetch('/api/verify-reset-otp', {
+        const response = await fetch('https://gctu-hostels-backend.onrender.com/api/verify-reset-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, code })

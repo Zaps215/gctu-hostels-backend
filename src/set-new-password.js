@@ -110,7 +110,8 @@ form.addEventListener('submit', async (e) => {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
     
     try {
-        const response = await fetch('/api/reset-password', {
+}
+        const response = await fetch('https://gctu-hostels-backend.onrender.com/api/reset-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, newPassword: password })

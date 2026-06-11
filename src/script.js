@@ -142,7 +142,7 @@ async function verifyOtp() {
     verifyBtn.innerHTML = 'Verifying...';
     
     try {
-        const response = await fetch('/api/verify-otp', {
+        const response = await fetch('https://gctu-hostels-backend.onrender.com/api/verify-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -185,7 +185,7 @@ async function resendOtp() {
     resendBtn.innerHTML = 'Sending...';
     
     try {
-        const response = await fetch('/api/send-otp', {
+        const response = await fetch('https://gctu-hostels-backend.onrender.com/api/send-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -243,7 +243,7 @@ const submitBtn = document.getElementById('signupBtn');
 
     try {
         // Send to backend API
-        const response = await fetch('/api/send-otp', {
+        const response = await fetch('https://gctu-hostels-backend.onrender.com/api/send-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
