@@ -17,7 +17,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS
 app.use(cors({
-    origin: ['http://localhost:5500', 'http://127.0.0.1:5500', 'http://localhost:5000', 'http://172.30.149.184:5500'],
+    origin: ['http://localhost:5500', 'http://127.0.0.1:5500', 
+        'http://localhost:5000', 'http://172.30.149.184:5500', 'https://gctu-hostels-backend.onrender.com',
+    'https://your-netlify-app.netlify.app' ],
     credentials: true,
      allowedHeaders: ['Content-Type', 'Authorization'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
