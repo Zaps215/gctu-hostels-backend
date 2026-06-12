@@ -9,7 +9,7 @@ async function sendEmail(to, subject, html) {
         const result = await client.transactionalEmails.sendTransacEmail({
             subject: subject,
             htmlContent: html,
-            sender: { name: 'GCTU StudentHostels', email: 'ae4ae2001@smtp-brevo.com' },
+            sender: { name: 'GCTU StudentHostels', email: 'gctustudenthostels@smtp-brevo.com' },
             to: [{ email: to }]
         });
         console.log('Email sent:', result.messageId);
