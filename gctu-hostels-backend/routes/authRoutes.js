@@ -39,6 +39,7 @@ const emailHtml = `
         return res.status(500).json({ error: 'Failed to send OTP email' });
     }
         req.session.tempSignup = { fullName, username, email, password };
+        await req.session.save(); 
 	res.json({ message: 'OTP sent to your email' });
 	} catch (error) {
         console.error('Email error:', error);
