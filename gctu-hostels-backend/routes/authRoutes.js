@@ -56,7 +56,7 @@ router.post('/verify-otp', async (req, res) => {
             return res.status(400).json({ error: 'Email and code are required' });
         }
 
-        //FID VALID OTP
+        //FIND VALID OTP
         const otpRecord = await OTP.findOne({
             email,
             code,

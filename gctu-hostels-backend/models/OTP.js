@@ -20,6 +20,12 @@ const OTPSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     }
+    // Add this optional object to hold the data safely
+    signupData: {
+        fullName: { type: String },
+        username: { type: String },
+        password: { type: String } // Will be passed down and hashed on user save
+    }
 });
 
 module.exports = mongoose.model('OTP', OTPSchema);

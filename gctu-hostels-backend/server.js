@@ -25,7 +25,8 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
-//serving frontend from backend: app.use(express.static('public'));
+// ADD THIS LINE RIGHT HERE 
+app.set('trust proxy', 1);
 
 // Session middleware (FIXED syntax)
 app.use(session({
