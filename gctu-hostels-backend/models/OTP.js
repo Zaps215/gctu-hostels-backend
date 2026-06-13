@@ -19,7 +19,7 @@ const OTPSchema = new mongoose.Schema({
     used: {
         type: Boolean,
         default: false
-    }
+    },
     // Add this optional object to hold the data safely
     signupData: {
         fullName: { type: String },
