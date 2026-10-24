@@ -25,7 +25,7 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
-// ADD THIS LINE RIGHT HERE 
+// Required for Render/ Cloud hosting when secure is true
 app.set('trust proxy', 1);
 
 // Session middleware (FIXED syntax)
@@ -38,8 +38,8 @@ app.use(session({
     }),
     cookie: {
         httpOnly: true,
-        secure: true,
-        sameSite: 'none',
+        secure: process.env.NODE_ENV === 'production', //True on live site, false locally
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', //'none' live, 'lax' locally
         maxAge: 1000 * 60 * 60 * 24
     }
 }));

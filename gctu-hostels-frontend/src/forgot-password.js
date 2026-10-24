@@ -27,7 +27,7 @@ form.addEventListener('submit', async (e) => {
             errorDisplay.innerText = data.error || 'Failed to send reset code';
         }
     } catch (err) {
-        errorDisplay.innerText = 'Cannot connect to server';
+        errorDisplay.innerText = 'Connection Failed! Please try again';
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reset Code';

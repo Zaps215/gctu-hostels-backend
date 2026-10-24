@@ -52,7 +52,7 @@ form.addEventListener('submit', async (e) => {
             submitBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Reset Password';
         }
     } catch (err) {
-        errorDisplay.innerText = 'Cannot connect to server';
+        errorDisplay.innerText = 'Connection Failed! Please try again';
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Reset Password';
     }

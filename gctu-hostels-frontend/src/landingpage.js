@@ -3,7 +3,8 @@
                 {
                     id: 1,
                     name: "Unidaz Hostel",
-                     image: "https://images.unsplash.com/photo-1709805619372-40de3f158e83?w=400",
+                image: "https://images.unsplash.com/photo-1709805619372-40de3f158e83?w=400",
+                    
                     location: "Ghana Communication Technology University, Tesano - Accra",
                     price:  2400,
                     priceLabel: "GHS 2,400/sem",
@@ -19,7 +20,7 @@
                 {
                     id: 2,
                     name: "Palace Hostel",
-                    image: "https://images.unsplash.com/photo-1608198399988-341f712c3711?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fGhvc3RlbHxlbnwwfHwwfHx8MA%3D%3D",
+                    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHY4LlByxw1ArwZezeraPvduHn395wLXalR_haQu7DLA&s=10",
                     location: "Ghana Communication Technology University, Tesano  - Accra",
                     price: 2500,
                     priceLabel: "GHS 2,500/sem",
@@ -35,8 +36,7 @@
                 {
                     id: 3,
                     name: "Delicious Hostel",
-                     image: "https://images.unsplash.com/photo-1623625434462-e5e42318ae49?w=700&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8aG9zdGVsfGVufDB8fDB8fHww",
-                    location: "Ghana Communication Technology University, Tesano  - Accra",
+                    image: "https://images.unsplash.com/photo-1623625434462-e5e42318ae49?w=700&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8aG9zdGVsfGVufDB8fDB8fHww",
                     price: 2800,
                     priceLabel: "GHS 2,400/sem",
                     amenities: ["WiFi", "Study Area", "Security", "Water Supply"],
@@ -66,7 +66,7 @@
                 {
                     id: 5,
                     name: "Zack B Hostel",
-                     image: "https://images.unsplash.com/photo-1709805619372-40de3f158e83?w=400",
+                     image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSsI1fa7Cm0-Pc-Ot-Ft9htzLPRPyAkcZxZtjmlvtv2iw&s=10",
                     location: "Ghana Communication Technology University, Tesano  - Accra",
                     price: 3000,
                     priceLabel: "GHS 3,000/sem",

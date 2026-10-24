@@ -15,7 +15,15 @@
 <body>
     <div id="app">
         <!--Login form-->
+        
         <div id="LoginContainer" class="glass-panel">
+            <a href="index.html" class="back-arrow">
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="19" y1="12" x2="5" y2="12"></line>
+    <polyline points="12 19 5 12 12 5"></polyline>
+  </svg>
+  <span>Back to Home</span>
+</a>
             <div class="text-center">
                 <i class="fas fa-laptop-code" style="font-size: 3rem; color: #f97316; margin-bottom: 0.75rem;"></i>
                 <h2 id="header">Welcome Back</h2>
@@ -40,8 +48,11 @@
                 </div>
 
                 <button type="submit" class="btn-primary" id="LoginBtn" value="Submit">
-                    <i class="fas fa-arrow-right-to-bracket"></i>
-                    Login
+                    <i class="fas fa-arrow-right-to-bracket" id="login-icon"></i>
+    <span id="login-text">Login</span>
+    <!-- Hidden spinner by default -->
+    <span class="spinner" id="login-spinner" style="display: none;"></span>
+                    
                 </button>
                 <p id="error-message">
 

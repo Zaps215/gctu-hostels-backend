@@ -185,9 +185,27 @@ body{
             font-family: 'Inter', sans-serif;
         }
 
-        .toast-message.show {
+ .toast-message.show {
             transform: translateX(-50%) translateY(0);
         }
+
+        /*back arrow to landing page*/
+.back-arrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #94a3b8; /* Soft muted gray */
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 20px;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.back-arrow:hover {
+    color: #5147c8; /* Pure white on hover */
+    transform: translateX(-3px); /* Subtle slide-left effect */
+}
 
         /*password reset*/
         /* Forgot Password Flow Styles */
@@ -395,4 +413,28 @@ body.dark-mode .popup-content h3 {
     background: #e76f51;
     color: white;
     transform: translateY(-2px);
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Optional disabled button look */
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }

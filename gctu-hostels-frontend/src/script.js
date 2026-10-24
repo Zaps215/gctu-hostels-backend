@@ -238,6 +238,8 @@ SignupForm.addEventListener('submit', async function(e) {
     }
 
 const submitBtn = document.getElementById('signupBtn');
+//loading spinner
+
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending OTP...';
 
@@ -265,7 +267,7 @@ const submitBtn = document.getElementById('signupBtn');
         }
     } catch (err) {
         console.error("Error:", err);
-        errorDisplay.innerText = "Cannot connect to server.";
+        errorDisplay.innerText = "Connection Failed! Please try again.";
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-user-check"></i> Register';
     }
