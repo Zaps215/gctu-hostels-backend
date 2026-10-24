@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const Hostel = require('../models/Hostel');
 
 router.get('/sitemap.xml', async (req, res) => {
   try {
@@ -14,21 +13,13 @@ router.get('/sitemap.xml', async (req, res) => {
 
     streamToPromise(sitemapStream).then((sm) => res.send(sm));
 
+    // Static pages
     sitemapStream.write({ url: '/', changefreq: 'daily', priority: 1.0 });
     sitemapStream.write({ url: '/homepage.html', changefreq: 'daily', priority: 0.9 });
     sitemapStream.write({ url: '/dashboard.html', changefreq: 'weekly', priority: 0.7 });
     sitemapStream.write({ url: '/login.html', changefreq: 'monthly', priority: 0.3 });
     sitemapStream.write({ url: '/signup.html', changefreq: 'monthly', priority: 0.3 });
     sitemapStream.write({ url: '/forgot-password.html', changefreq: 'monthly', priority: 0.1 });
-
-    const hostels = await Hostel.find({});
-    hostels.forEach((hostel) => {
-      sitemapStream.write({
-        url: `/hostel-details.html?id=${hostel._id}`,
-        changefreq: 'weekly',
-        priority: 0.8,
-      });
-    });
 
     sitemapStream.end();
   } catch (error) {
