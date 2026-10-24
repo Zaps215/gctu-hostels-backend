@@ -25,7 +25,7 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
-// Required for Render/ Cloud hosting when secure is true
+// Required for Render/ Cloud hosting when secure is true.
 app.set('trust proxy', 1);
 
 // Session middleware (FIXED syntax)
