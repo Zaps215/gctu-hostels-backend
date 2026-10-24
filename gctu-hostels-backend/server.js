@@ -6,6 +6,9 @@ require('dotenv').config();
 
 const connectDB = require('./config/db');
 
+//sitemap for gsc
+const sitemapRoute = require('./routes/sitemap');
+
 // Connect to database
 connectDB();
 
@@ -53,6 +56,9 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api', require('./routes/authRoutes'));
+
+//sitemap for gsc route
+app.use('/', sitemapRoute);
 
 // Test route
 app.get('/api/test', (req, res) => {
