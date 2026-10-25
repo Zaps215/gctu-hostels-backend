@@ -52,7 +52,7 @@ app.use(hpp());
 
 
 // Required for Render/ Cloud hosting when secure is true.
-app.set('trust proxy', 1);
+app.set('trust proxy', true);
 
 // CORS
 app.use(cors({
