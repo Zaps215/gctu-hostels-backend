@@ -2,6 +2,10 @@ const express = require('express');
 const session = require('express-session');
 const mongoStore = require('connect-mongo');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const hpp = require('hpp');
 require('dotenv').config();
 
 const connectDB = require('./config/db');
@@ -14,9 +18,29 @@ connectDB();
 
 const app = express();
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// SECURITY MIDDLEWARES
+
+//  Set security HTTP headers
+app.use(helmet());
+
+// Body parser with size limits to prevent payload DoS
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+// Prevent NoSQL Injection (strips $, . from inputs)
+app.use(mongoSanitize({ replaceWith: '_' }));
+
+//  Prevent HTTP Parameter Pollution
+app.use(hpp());
+
+
+// ==========================================
+// STANDARD MIDDLEWARES & CONFIG
+// ==========================================
+
+
+// Required for Render/ Cloud hosting when secure is true.
+app.set('trust proxy', 1);
 
 // CORS
 app.use(cors({
@@ -28,8 +52,7 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
-// Required for Render/ Cloud hosting when secure is true.
-app.set('trust proxy', 1);
+
 
 // Session middleware (FIXED syntax)
 app.use(session({
@@ -47,12 +70,45 @@ app.use(session({
     }
 }));
 
+// ==========================================
+// RATE LIMITING
+// ==========================================
+
+// Global rate limiter for overall API endpoints
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests from this IP, please try again later.' }
+});
+
+// Strict rate limiter for authentication routes (Brute-Force protection)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Max 10 attempts per IP per 15 minutes
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many authentication attempts. Please try again after 15 minutes.' }
+});
+
+// Apply global rate limiter
+app.use(globalLimiter);
+
+// Apply strict rate limiters to sensitive auth paths (matching your /api prefix structure)
+app.use('/api/login', authLimiter);
+app.use('/api/signup', authLimiter);
+app.use('/api/send-otp', authLimiter);
+app.use('/api/verify-otp', authLimiter);
+app.use('/api/reset-password', authLimiter);
+
 // Debug middleware - check if session is working
 app.use((req, res, next) => {
     console.log('🔍 Session ID:', req.sessionID);
     console.log('🔍 Session data:', req.session);
     next();
 });
+
 
 // Routes
 app.use('/api', require('./routes/authRoutes'));
