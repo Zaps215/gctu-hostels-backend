@@ -53,7 +53,7 @@ loginForm.addEventListener('submit', async function(e) {
     try {
         console.log("Sending login request to backend...");
         // Send to backend API (NOT localStorage)
-        const response = await fetch('https://gctu-hostels-backend.onrender.com/api/login', {
+        const response = await fetch(`${API_CONFIG.AUTH_API}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -73,12 +73,12 @@ loginForm.addEventListener('submit', async function(e) {
         const popupMessage = document.getElementById('popupMessage');
         
         const userName = data.user.fullName || data.user.username || 'Student';
-        popupMessage.innerHTML = `Welcome back, ${data.user.fullName}! Redirecting to Homepage...`;
+        popupMessage.innerHTML = `Welcome back, ${userName}! Redirecting to Homepage...`;
         
         loginPopup.classList.add('show');
         
         document.getElementById('popupOkBtn').onclick = function() {
-            window.location.replace('/homepage.html');
+            window.location.replace('homepage.html');
         }; 
         // Redirect immediately - no popup
 /*window.location.href = 'homepage.html';*/

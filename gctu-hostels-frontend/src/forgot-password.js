@@ -12,9 +12,10 @@ form.addEventListener('submit', async (e) => {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
     try {
-        const response = await fetch('https://gctu-hostels-backend.onrender.com/api/forgot-password', {
+        const response = await fetch(`${API_CONFIG.AUTH_API}/forgot-password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ email })
         });
 

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hostel Details | GCTU StudentHostels</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fefcf5 0%, #f8f3e9 100%);
+            color: #1e2a2f;
+            min-height: 100vh;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 16px 32px;
+        }
+
+        body.dark-mode .navbar {
+            background: rgba(26, 26, 46, 0.96);
+        }
+
+        .navbar-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo a {
+            font-size: 24px;
+            font-weight: 800;
+            text-decoration: none;
+            background: linear-gradient(135deg, #2b5f8a, #1f8a7c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo span {
+            color: #f4a261;
+            font-size: 18px;
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .btn-back {
+            text-decoration: none;
+            color: #2b5f8a;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 40px;
+            background: rgba(43, 95, 138, 0.1);
+            transition: 0.2s;
+        }
+
+        body.dark-mode .btn-back {
+            color: #f4a261;
+            background: rgba(244, 162, 97, 0.1);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 32px auto;
+            padding: 0 24px;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 32px;
+        }
+
+        /* Image Section */
+        .image-card {
+            background: #fff;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            margin-bottom: 24px;
+        }
+
+        body.dark-mode .image-card,
+        body.dark-mode .card {
+            background: #1e1e2e;
+        }
+
+        .main-image {
+            width: 100%;
+            height: 420px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            margin-bottom: 24px;
+        }
+
+        .hostel-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .hostel-location {
+            color: #6c7e82;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .price-badge {
+            display: inline-block;
+            background: rgba(244, 162, 97, 0.15);
+            color: #e76f51;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-heading {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #2b5f8a;
+        }
+
+        body.dark-mode .section-heading {
+            color: #f4a261;
+        }
+
+        .amenities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .amenity-chip {
+            background: #f8f5ee;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+
+        body.dark-mode .amenity-chip {
+            background: #2a2a3e;
+            color: #e0e0e0;
+        }
+
+        /* Manager Contact Card */
+        .contact-box {
+            position: sticky;
+            top: 100px;
+        }
+
+        .contact-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 14px;
+            border-radius: 40px;
+            font-weight: 700;
+            text-decoration: none;
+            margin-bottom: 12px;
+            transition: 0.2s;
+        }
+
+        .btn-call {
+            background: #2b5f8a;
+            color: white;
+        }
+
+        .btn-whatsapp {
+            background: #25d366;
+            color: white;
+        }
+
+        .contact-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 900px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+            .contact-box {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <div class="logo">
+                <a href="homepage.html">GCTU<span>StudentHostels</span></a>
+            </div>
+            <div class="nav-actions">
+                <a href="homepage.html" class="btn-back">← Back to Listings</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" id="detailsContainer">
+        <div style="text-align: center; padding: 60px;">Loading hostel details...</div>
+    </div>
+    <script src="config.js"></script>
+    <script>
+        const HOSTEL_API_URL = API_CONFIG.HOSTEL_API;
+
+        // Get Hostel ID from URL query parameters (?id=...)
+        const urlParams = new URLSearchParams(window.location.search);
+        const hostelId = urlParams.get('id');
+
+        async function fetchHostelDetails() {
+            const container = document.getElementById('detailsContainer');
+
+            if (!hostelId) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 60px;">
+                        <h2>Hostel not found</h2>
+                        <p style="margin-top: 10px;"><a href="index.html" class="btn-back">Return to Listings</a></p>
+                    </div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${HOSTEL_API_URL}/${hostelId}`);
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    renderHostel(result.data);
+                } else {
+                    container.innerHTML = `
+                        <div style="text-align: center; padding: 60px;">
+                            <h2>Unable to load hostel details</h2>
+                            <p>${result.message || 'Hostel listing does not exist.'}</p>
+                        </div>`;
+                }
+            } catch (error) {
+                console.error('Error fetching hostel details:', error);
+                container.innerHTML = `<div style="text-align: center; padding: 60px;">Error connecting to server.</div>`;
+            }
+        }
+
+        function renderHostel(hostel) {
+            const container = document.getElementById('detailsContainer');
+            
+            const amenitiesList = hostel.amenities && hostel.amenities.length > 0 
+                ? hostel.amenities.map(a => `<div class="amenity-chip"><i class="fas fa-check-circle" style="color: #1f8a7c;"></i> ${a}</div>`).join('')
+                : '<p style="color: #6c7e82;">No amenities listed.</p>';
+
+            const phone = hostel.contactPhone || hostel.phone || hostel.managerPhone || '+233000000000';
+            const cleanPhone = phone.replace(/[^0-9+]/g, '');
+
+            container.innerHTML = `
+                <div class="details-grid">
+                    <!-- Left Column: Media & Overview -->
+                    <div>
+                        <div class="image-card">
+                            <img src="${hostel.coverImage || hostel.image || 'https://via.placeholder.com/800x420?text=GCTU+Hostel'}" alt="${hostel.name}" class="main-image">
+                        </div>
+
+                        <div class="card">
+                            <h1 class="hostel-title">${hostel.name}</h1>
+                            <div class="hostel-location">
+                                <i class="fas fa-map-marker-alt" style="color: #e76f51;"></i>
+                                <span>${hostel.location || 'Near GCTU Campus'}</span>
+                                ${hostel.distanceFromCampus || hostel.distance ? `• <span>${hostel.distanceFromCampus || hostel.distance}</span>` : ''}
+                            </div>
+
+                            <div class="price-badge">
+                                GHS ${hostel.price ? hostel.price.toLocaleString() : 'N/A'} / ${hostel.paymentTerm === 'per academic year' ? 'year' : 'semester'}
+                            </div>
+
+                            <h3 class="section-heading">Description</h3>
+                            <p style="line-height: 1.6; color: #5a6b70; margin-bottom: 24px;">
+                                ${hostel.description || 'Clean, safe, and modern student hostel accommodation situated close to the GCTU campus.'}
+                            </p>
+
+                            <h3 class="section-heading">Amenities</h3>
+                            <div class="amenities-grid">
+                                ${amenitiesList}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Landlord / Manager Contact -->
+                    <div>
+                        <div class="card contact-box">
+                            <h3 class="section-heading">Contact Management</h3>
+                            <p style="font-size: 14px; color: #6c7e82; margin-bottom: 20px;">
+                                Get in touch directly with the hostel manager for room availability and viewings.
+                            </p>
+
+                            <a href="tel:${cleanPhone}" class="contact-btn btn-call">
+                                <i class="fas fa-phone-alt"></i> Call Manager (${phone})
+                            </a>
+
+                            <a href="https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hello, I am interested in booking a room at ${hostel.name} via GCTU StudentHostels.`)}" target="_blank" class="contact-btn btn-whatsapp">
+                                <i class="fab fa-whatsapp"></i> Chat on WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Fetch hostel details on load
+        fetchHostelDetails();
+    </script>
+</body>
+</html>

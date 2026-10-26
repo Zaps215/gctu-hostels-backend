@@ -6,6 +6,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
+const hostelRoutes = require('./routes/hostelRoutes');
 require('dotenv').config();
 
 const connectDB = require('./config/db');
@@ -56,8 +57,14 @@ app.set('trust proxy', 1);
 
 // CORS
 app.use(cors({
-    origin: ['http://localhost:5500', 'http://127.0.0.1:5500', 
-        'http://localhost:5000', 'http://172.30.149.184:5500', 'https://gctu-hostels-backend.onrender.com',
+    origin: [
+        'http://localhost:3000', 
+        'http://127.0.0.1:3000',
+        'http://localhost:5500',
+         'http://127.0.0.1:5500', 
+        'http://localhost:5000',
+         'http://172.30.149.184:5500', 
+         'https://gctu-hostels-backend.onrender.com',
     'https://student-hostels.netlify.app' ],
     credentials: true,
      allowedHeaders: ['Content-Type', 'Authorization'],
@@ -124,6 +131,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api', require('./routes/authRoutes'));
+app.use('/api/hostels', hostelRoutes);
 
 //sitemap for gsc route
 app.use('/', sitemapRoute);
@@ -131,6 +139,23 @@ app.use('/', sitemapRoute);
 // Test route
 app.get('/api/test', (req, res) => {
     res.json({ message: 'Backend is working!' });
+});
+
+// Global Error Handling Middleware
+app.use((err, req, res, next) => {
+    console.error('🔥 Unhandled Server Error:', err.stack);
+
+    // If headers were already sent, delegate to default Express handler
+    if (res.headersSent) {
+        return next(err);
+    }
+
+    // Send safe JSON response
+    res.status(err.status || 500).json({
+        error: process.env.NODE_ENV === 'production' 
+            ? 'An unexpected error occurred. Please try again later.' 
+            : err.message // Show real error only during local development
+    });
 });
 
 const PORT = process.env.PORT || 5000;

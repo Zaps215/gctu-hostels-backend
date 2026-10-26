@@ -18,7 +18,9 @@ function maskEmail(email) {
     return `${firstChar}****${lastChar}@${domain}`;
 }
 
-document.getElementById('emailDisplay').innerText = maskEmail(email);
+if (email) {
+    document.getElementById('emailDisplay').innerText = maskEmail(email);
+}
 
 function updateTimerDisplay() {
     const minutes = Math.floor(timeLeft / 60);
@@ -42,11 +44,15 @@ function startTimer() {
     }, 1000);
 }
 
-startTimer();
+if (email) {
+    startTimer();
+}
 
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
+    if (!email) return;
+
     const code = document.getElementById('otpCode').value.trim();
     errorDisplay.innerText = '';
     
@@ -60,9 +66,10 @@ form.addEventListener('submit', async (e) => {
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
     
     try {
-        const response = await fetch('https://gctu-hostels-backend.onrender.com/api/verify-reset-otp', {
+        const response = await fetch(`${API_CONFIG.AUTH_API}/verify-reset-otp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ email, code })
         });
         

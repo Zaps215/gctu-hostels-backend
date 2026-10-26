@@ -4,7 +4,7 @@ const User = require('../models/User');
 const OTP = require('../models/OTP');
 const { sendEmail } = require('../config/email');
 const validatePassword = require('../utils/passwordValidator');
-
+const isAuthenticated = require('../middleware/auth');
 
 router.post('/send-otp', async (req, res) => {
     try{
@@ -133,46 +133,80 @@ router.post('/signup', async (req, res) => {
     });
 
     //login route
-    router.post('/login', async (req, res) => {
-        const { username, password } = req.body;
-        if (!username || !password) return res.status(400).json({ error: '...' });
-        try {
-            const user = await User.findOne({ username });
-            if (!user) return res.status(401).json({ error: 'User not found' });
-            const isMatch = await user.comparePassword(password);
-            if (!isMatch) return res.status(401).json({ error: 'Password is Incorrect' });
+    //login route
+router.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'All fields are required' });
+    try {
+        const user = await User.findOne({ username });
+        if (!user) return res.status(401).json({ error: 'Invalid username or password' });
+        
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) return res.status(401).json({ error: 'Invalid username or password' });
+        
+        // Regenerate session to prevent session fixation attacks
+        req.session.regenerate((err) => {
+            if (err) {
+                console.error('Session regeneration error:', err);
+                return res.status(500).json({ error: 'Server error during login' });
+            }
+            
             req.session.userId = user._id;
-            res.json({ message: 'Login successful', user: { id: user._id, fullName: user.fullName, username: user.username, email: user.email } });
-            } catch (error) { console.error(error); res.status(500).json({ error: 'Server error during login' }); 
-        }
+            
+            // Explicitly save session to MongoDB before responding
+            req.session.save((saveErr) => {
+                if (saveErr) {
+                    console.error('Session save error:', saveErr);
+                    return res.status(500).json({ error: 'Server error during login' });
+                }
+
+                res.json({ 
+                    message: 'Login successful', 
+                    user: { 
+                        id: user._id, 
+                        fullName: user.fullName, 
+                        username: user.username, 
+                        email: user.email 
+                    } 
+                });
+            });
         });
-        router.post('/logout', async (req, res) => {
+    } catch (error) { 
+        console.error('Login catch error:', error); 
+        res.status(500).json({ error: 'Server error during login' }); 
+    }
+});
+
+
+    router.post('/logout', async (req, res) => {
         req.session.destroy((err) => {
             if (err) {
                 return res.status(500).json({ error: 'Logout failed' });
             }
+            // Explicitly clear the session cookie from the browser
+        res.clearCookie('connect.sid', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+        });
             res.json({ message: 'Logout successful' });
         });
     });
 
-    ///me route
-    router.get('/me', async (req, res) => {
-        if (!req.session.userId) {
-            return res.status(401).json({ error: 'Not authenticated' });
+// /me route (protected by middleware)
+router.get('/me', isAuthenticated, async (req, res) => {
+    try {
+        console.log('Looking for user with ID:', req.session.userId);
+        const user = await User.findById(req.session.userId).select('-password');
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
         }
-        try{
-             console.log('Looking for user with ID:', req.session.userId);
-            const user = await User.findById(req.session.userId).select('-password');
-            if (!user) {
-                return res.status(404).json({ error: 'User not found' });
-            }
-            res.json({user});
-        } catch (error) {
-            console.error('Error in /me:', error);
-            res.status(500).json({ error: 'Server error'});
-        }
-    });
-
+        res.json({ user });
+    } catch (error) {
+        console.error('Error in /me:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
     
 
 
@@ -184,40 +218,37 @@ router.post('/forgot-password', async (req, res) => {
         if (!email) {
             return res.status(400).json({ error: 'Email is required' });
         }
-        
-        // Check if user exists
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ error: 'No account found with this email' });
+
+        const normalizedEmail = email.trim().toLowerCase();
+        const user = await User.findOne({ email: normalizedEmail });
+
+        // Only send a code when the account exists, but always return the same response
+        if (user) {
+            // Generate 6-digit OTP
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+            // Delete old OTPs for this email
+            await OTP.deleteMany({ email: normalizedEmail });
+
+            // Save new OTP (expires in 10 minutes)
+            await OTP.create({ email: normalizedEmail, code, expiresAt: new Date(Date.now() + 10 * 60 * 1000) });
+
+            // Send email
+            const emailHtml = `
+                <div style="font-family: Arial, sans-serif;">
+                    <h2>Password Reset Request</h2>
+                    <p>You requested to reset your password. Your OTP code is:</p>
+                    <h1 style="color: #f4a261;">${code}</h1>
+                    <p>This code expires in 10 minutes.</p>
+                    <p>If you didn't request this, please ignore this email.</p>
+                </div>
+            `;
+            await sendEmail(normalizedEmail, 'Reset Your Password - GCTU StudentHostels', emailHtml);
         }
         
-        // Generate 6-digit OTP
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        // Delete old OTPs for this email
-        await OTP.deleteMany({ email });
-        
-        // Save new OTP (expires in 10 minutes)
-        await OTP.create({ email, code, expiresAt: new Date(Date.now() + 10 * 60 * 1000) });
-        
-        // Send email
-        const emailHtml = `
-            <div style="font-family: Arial, sans-serif;">
-                <h2>Password Reset Request</h2>
-                <p>You requested to reset your password. Your OTP code is:</p>
-                <h1 style="color: #f4a261;">${code}</h1>
-                <p>This code expires in 10 minutes.</p>
-                <p>If you didn't request this, please ignore this email.</p>
-            </div>
-        `;
-        
-        const emailResult = await sendEmail(email, 'Reset Your Password - GCTU StudentHostels', emailHtml);
-        
-        if (!emailResult.success) {
-            return res.status(500).json({ error: 'Failed to send reset email' });
-        }
-        
-        res.json({ message: 'Reset code sent to your email' });
+        // 🔒 SECURITY FIX: Always return a generic success message, 
+        // regardless of whether the email was found or not!
+        res.json({ message: 'If an account with that email exists, a password reset code has been sent.' });
         
     } catch (error) {
         console.error('Forgot password error:', error);
@@ -233,6 +264,13 @@ router.post('/reset-password', async (req, res) => {
         if (!email || !newPassword) {
             return res.status(400).json({ error: 'Email and password are required' });
         }
+
+        const normalizedEmail = email.trim().toLowerCase();
+
+        // The user must have verified the OTP for this email first
+        if (!req.session.resetEmail || req.session.resetEmail !== normalizedEmail) {
+            return res.status(401).json({ error: 'Please verify the OTP code before resetting your password' });
+        }
         
         // Validate new password strength
         const passwordCheck = validatePassword(newPassword);
@@ -241,14 +279,16 @@ router.post('/reset-password', async (req, res) => {
         }
         
         // Find user
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: normalizedEmail });
         if (!user) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ error: 'If an account with that email exists, a password reset code has been sent.' });
         }
         
         // Update password
         user.password = newPassword;
         await user.save();
+
+        delete req.session.resetEmail;
         
         res.json({ message: 'Password reset successfully' });
         
@@ -266,9 +306,11 @@ router.post('/verify-reset-otp', async (req, res) => {
         if (!email || !code) {
             return res.status(400).json({ error: 'Email and code are required' });
         }
+
+        const normalizedEmail = email.trim().toLowerCase();
         
         const otpRecord = await OTP.findOne({
-            email,
+            email: normalizedEmail,
             code,
             expiresAt: { $gt: new Date() },
             used: false
@@ -281,8 +323,16 @@ router.post('/verify-reset-otp', async (req, res) => {
         // Mark OTP as used
         otpRecord.used = true;
         await otpRecord.save();
-        
-        res.json({ message: 'OTP verified successfully' });
+
+        // Allow the reset-password route to run for this email
+        req.session.resetEmail = normalizedEmail;
+        req.session.save((err) => {
+            if (err) {
+                console.error('Reset session save error:', err);
+                return res.status(500).json({ error: 'Server error' });
+            }
+            res.json({ message: 'OTP verified successfully' });
+        });
         
     } catch (error) {
         console.error(error);
