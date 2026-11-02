@@ -18,11 +18,6 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         trim: true
     },
-    role: {
-        type: String,
-        enum: ['student', 'manager'],
-        default: 'student'
-    },
     password: {
         type: String,
         required: [true, 'Password is required'],
@@ -49,6 +44,7 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 module.exports = mongoose.model('User', userSchema);
+
 
 
 

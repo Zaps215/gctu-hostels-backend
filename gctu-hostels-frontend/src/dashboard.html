@@ -448,6 +448,17 @@
                 return true;
             });
 
+            // Calculate unique hostel views from activities or localStorage
+const uniqueHostelViews = new Set(
+    dashboard.activities
+        .filter(act => act.action && act.action.startsWith('Viewed'))
+        .map(act => act.action)
+).size;
+
+// Fallback to local unique count if available
+const localExplored = JSON.parse(localStorage.getItem('exploredHostels')) || [];
+const uniqueCount = Math.max(uniqueHostelViews, localExplored.length);
+
             container.innerHTML = `
             <!-- Header Section (Data from Database) -->
             <div class="welcome-section">
@@ -467,7 +478,7 @@
                 </div>
                 <div class="stat-card">
                     <i class="fas fa-eye"></i>
-                    <h3>${stats.hostelsViewed}</h3>
+                   <h3>${uniqueCount}</h3>
                     <p>Hostels Explored</p>
                 </div>
                 <div class="stat-card">

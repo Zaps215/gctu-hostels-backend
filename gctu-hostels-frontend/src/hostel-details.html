@@ -247,6 +247,7 @@
     <script src="config.js"></script>
     <script src="utils/activityLogger.js"></script>
     <script>
+        
         const HOSTEL_API_URL = API_CONFIG.HOSTEL_API;
 
         // Get Hostel ID from URL query parameters (?id=...)
@@ -265,6 +266,9 @@
                 return;
             }
 
+            // Record unique view locally for the dashboard counter
+            logHostelView(hostelId);
+
             try {
                 const response = await fetch(`${HOSTEL_API_URL}/${hostelId}`);
                 const result = await response.json();
@@ -281,6 +285,19 @@
             } catch (error) {
                 console.error('Error fetching hostel details:', error);
                 container.innerHTML = `<div style="text-align: center; padding: 60px;">Error connecting to server.</div>`;
+            }
+        }
+
+        // Function to track unique hostel views
+        function logHostelView(id) {
+            if (!id) return; 
+
+            let explored = JSON.parse(localStorage.getItem('exploredHostels')) || [];
+
+            // Only add the hostel ID if it hasn't been recorded yet
+            if (!explored.includes(id)) {
+                explored.push(id);
+                localStorage.setItem('exploredHostels', JSON.stringify(explored));
             }
         }
 
@@ -399,7 +416,7 @@
 
         // Fetch hostel details on load
         fetchHostelDetails();
-
+    
     </script>
 </body>
 </html>

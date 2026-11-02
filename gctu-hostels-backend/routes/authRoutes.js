@@ -101,7 +101,6 @@ router.post('/verify-otp', async (req, res) => {
             fullName,
             username,
             email: normalizedEmail,
-            role: 'student',
             password: passwordHash,
             createdAt: new Date()
         });

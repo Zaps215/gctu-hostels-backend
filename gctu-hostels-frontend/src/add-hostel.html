@@ -236,7 +236,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="price">Price (GHS) *</label>
-                        <input type="number" id="price" min="1" step="0.01" required placeholder="e.g. 3500">
+                        <input type="number" id="price" required placeholder="e.g. 3500">
                     </div>
                     <div class="form-group">
                         <label for="paymentTerm">Payment Term *</label>
@@ -265,7 +265,7 @@
 
                 <div class="form-group">
                     <label for="description">Property Description *</label>
-                    <textarea id="description" rows="4" maxlength="2000" required placeholder="Describe room types, security features, water availability, etc."></textarea>
+                    <textarea id="description" rows="4" required placeholder="Describe room types, security features, water availability, etc."></textarea>
                 </div>
 
                 <button type="submit" class="btn-submit" id="submitBtn">Publish Hostel Listing</button>
@@ -343,7 +343,7 @@
                         window.location.href = 'homepage.html';
                     }, 1500);
                 } else {
-                    throw new Error(result.error || result.message || 'Failed to publish hostel listing.');
+                    throw new Error(result.message || 'Failed to publish hostel listing.');
                 }
             } catch (error) {
                 console.error('Publish error:', error);

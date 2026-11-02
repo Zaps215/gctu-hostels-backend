@@ -138,7 +138,7 @@ All API routes are hosted under `/api`. Routes marked **Session required** expec
 |---|---|---|---|
 | `GET` | `/api/hostels` | Public | List hostels; accepts `search`, `gender`, `maxPrice`, `sort`, and `university` query parameters |
 | `GET` | `/api/hostels/:id` | Public | Return one hostel |
-| `POST` | `/api/hostels` | Manager session required | Create a hostel record |
+| `POST` | `/api/hostels` | Session required | Create a hostel record |
 
 Example:
 
@@ -163,7 +163,7 @@ Session-protected requests from the frontend must include credentials (cookies);
 
 - Hostel browsing, favorites, and activity use MongoDB-backed API data.
 - Bookings and payment processing are **not implemented**; contact actions do not create bookings.
-- Hostel creation requires a manager account. New registrations receive the `student` role; existing users must be explicitly assigned the `manager` role by a trusted database administrator.
+- Hostel creation currently requires a logged-in session, but there is not yet a role-based admin authorization system.
 - Search and discovery filters on the pages are applied client-side to the fetched hostel list.
 - No automated test suite is configured yet. Syntax checks and manual API smoke tests are not a substitute for regression or integration tests.
 

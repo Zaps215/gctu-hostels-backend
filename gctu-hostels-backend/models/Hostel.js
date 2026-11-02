@@ -60,11 +60,6 @@ const hostelSchema = new mongoose.Schema({
   contactPhone: { 
     type: String 
   },
-  description: {
-    type: String,
-    trim: true,
-    maxlength: 2000
-  },
   officialUrl: { 
     type: String 
   },
