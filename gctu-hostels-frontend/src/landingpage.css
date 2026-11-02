@@ -211,6 +211,28 @@
             flex-wrap: wrap;
         }
 
+        .price-filter,
+        .amenity-filters {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            font-weight: 600;
+        }
+
+        .price-filter select {
+            border: 0;
+            border-radius: 40px;
+            padding: 10px 16px;
+            background: #f8f5ee;
+            color: #1e2a2f;
+            font: inherit;
+        }
+
+        .amenity-filters {
+            flex-basis: 100%;
+        }
+
         .filter-btn {
             background: #f8f5ee;
             border: none;
@@ -825,4 +847,3 @@
     font-size: 3.8rem;
   }
 }
-

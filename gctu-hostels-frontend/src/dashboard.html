@@ -7,7 +7,7 @@
     <title>Dashboard | GCTU StudentHostels</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -175,7 +175,7 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 20px;
             margin-bottom: 32px;
         }
@@ -244,7 +244,7 @@
             gap: 8px;
         }
 
-        .booking-item,
+        .item-row,
         .profile-row,
         .activity-item {
             display: flex;
@@ -254,23 +254,14 @@
             border-bottom: 1px solid #f0ebe2;
         }
 
-        .booking-info h4 {
+        .item-info h4 {
             font-weight: 600;
             margin-bottom: 4px;
         }
 
-        .booking-info p {
+        .item-info p {
             font-size: 12px;
             color: #6c7e82;
-        }
-
-        .status-confirmed {
-            background: #e8f5e9;
-            color: #2e7d32;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
         }
 
         .profile-label {
@@ -380,7 +371,7 @@
     <nav class="navbar">
         <div class="navbar-inner">
             <div class="logo">
-                <a href="index.html">GCTU<span>StudentHostels</span></a>
+                <a href="homepage.html">GCTU<span>StudentHostels</span></a>
             </div>
             <div class="quick-search">
                 <div class="search-box">
@@ -397,10 +388,10 @@
     </nav>
 
     <div class="dashboard-container" id="dashboardContainer">
-        <div style="text-align: center; padding: 50px;">Loading dashboard...</div>
+        <div style="text-align: center; padding: 50px;">Loading student dashboard...</div>
     </div>
 
-    <!-- Logout Modal -->
+    <!-- Logout Confirmation Modal -->
     <div id="logoutModal" class="modal">
         <div class="modal-content">
             <div class="modal-icon">🚪</div>
@@ -412,212 +403,168 @@
             </div>
         </div>
     </div>
-    <script src="config.js"></script>
-    <script>
-const API_URL = API_CONFIG.AUTH_API;
 
-        // Get user data from signup registration
+    <!-- Dynamic Environment Config -->
+    <script src="config.js"></script>
+
+<script src="utils/activityLogger.js"></script>
+    <script>
+        // Exact API variables matching homepage.html
+        const API_URL = API_CONFIG.AUTH_API;
+        const HOSTEL_API_URL = API_CONFIG.HOSTEL_API;
+
         let user = null;
 
-        // Get initials for avatar
         function getInitials(name) {
             if (!name || name === 'Not provided' || name === 'null') return 'U';
-            const parts = name.split(' ');
+            const parts = name.trim().split(' ');
             if (parts.length >= 2) {
                 return (parts[0][0] + parts[1][0]).toUpperCase();
             }
             return name.substring(0, 2).toUpperCase();
         }
 
-        // Sample booking data (these come from backend later)
-        let currentBookings = [
-            { hostel: "Unidaz Hostel", room: "Single Room", date: "Aug 15, 2025 - Dec 15, 2025", status: "confirmed", price: "GHS 2,400" }
-        ];
-
-        let bookingHistory = [
-            { hostel: "Palace Hostel", room: "Double Room", date: "Jan 10, 2025 - May 10, 2025", status: "completed", price: "GHS 2,500" }
-        ];
-
-        let favoriteHostels = [
-            { name: "Unidaz Hostel", location: "Near GCTU Main Gate", price: "GHS 2,400/sem" }
-        ];
-
-        let recentActivity = [
-            { action: "Booked Unidaz Hostel", time: "2 days ago" }
-        ];
-
-        function calculateTotalSpent() {
-            let total = 0;
-            [...currentBookings, ...bookingHistory].forEach(booking => {
-                let price = parseInt(booking.price.replace(/[^0-9]/g, '')) || 0;
-                total += price;
-            });
-            return `GHS ${total.toLocaleString()}`;
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[character]);
         }
 
-        function renderDashboard(user) {
+        // --- Core UI Renderer ---
+        function renderDashboard(user, dashboard) {
             const container = document.getElementById('dashboardContainer');
+            const { favorites, stats } = dashboard;
+            const seenHostelViews = new Set();
+            const activities = dashboard.activities.filter(activity => {
+                const match = activity.action.match(/^Viewed (.+) page$/);
+                if (!match) return true;
+                const hostelName = match[1].trim().replace(/\s+/g, ' ').toLowerCase();
+                if (seenHostelViews.has(hostelName)) return false;
+                seenHostelViews.add(hostelName);
+                return true;
+            });
 
             container.innerHTML = `
-            <!-- Welcome Section -->
+            <!-- Header Section (Data from Database) -->
             <div class="welcome-section">
                 <div class="welcome-text">
-                    <h1>Welcome back, ${user.fullName?.split(' ')[0] || user.username || 'Student'}! 👋</h1>
-                    <p>Here's what's happening with your hostel stays</p>
+                    <h1>Welcome back, ${escapeHtml(user.fullName?.split(' ')[0] || user.username || 'Student')}! 👋</h1>
+                    <p>Your student portal for discovering and tracking GCTU accommodations.</p>
                 </div>
-                <div class="avatar-circle">${getInitials(user.fullName || user.username || 'U')}</div>
+                <div class="avatar-circle">${escapeHtml(getInitials(user.fullName || user.username || 'U'))}</div>
             </div>
-           
 
-            <!-- Stats Grid -->
+            <!-- MVP Activity Stats Grid -->
             <div class="stats-grid">
                 <div class="stat-card">
-                    <i class="fas fa-bed"></i>
-                    <h3>${currentBookings.filter(b => b.status === 'confirmed').length}</h3>
-                    <p>Active Bookings</p>
-                </div>
-                <div class="stat-card">
-                    <i class="fas fa-history"></i>
-                    <h3>${bookingHistory.length}</h3>
-                    <p>Total Stays</p>
-                </div>
-                <div class="stat-card">
                     <i class="fas fa-heart"></i>
-                    <h3>${favoriteHostels.length}</h3>
+                    <h3>${stats.savedHostels}</h3>
                     <p>Saved Hostels</p>
                 </div>
                 <div class="stat-card">
-                    <i class="fas fa-ghana-cedi"></i>
-                    <h3>${calculateTotalSpent()}</h3>
-                    <p>Total Spent</p>
+                    <i class="fas fa-eye"></i>
+                    <h3>${stats.hostelsViewed}</h3>
+                    <p>Hostels Explored</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-search"></i>
+                    <h3>${stats.searchesMade}</h3>
+                    <p>Searches Made</p>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3>Active</h3>
+                    <p>Student Account</p>
                 </div>
             </div>
 
-            <!-- Two Columns -->
+            <!-- Two Columns Main Section -->
             <div class="two-columns">
-                <!-- Current Bookings -->
+                <!-- Bookmarked Hostels (From the account API) -->
                 <div class="card">
-                    <h3><i class="fas fa-calendar-check" style="color: #f4a261;"></i> Current Bookings</h3>
-                    ${currentBookings.filter(b => b.status === 'confirmed').length > 0 ?
-                    currentBookings.filter(b => b.status === 'confirmed').map(booking => `
-                            <div class="booking-item">
-                                <div class="booking-info">
-                                    <h4>${booking.hostel}</h4>
-                                    <p>${booking.room} • ${booking.date}</p>
-                                    <p><strong>${booking.price}</strong></p>
+                    <h3><i class="fas fa-heart" style="color: #e76f51;"></i> Bookmarked Hostels</h3>
+                    ${favorites.length > 0 ?
+                    favorites.map(hostel => `
+                            <div class="item-row">
+                                <div class="item-info">
+                                    <h4>${escapeHtml(hostel.name)}</h4>
+                                    <p>${escapeHtml(hostel.location || 'Near Campus')}</p>
                                 </div>
-                                <span class="status-confirmed">${booking.status.toUpperCase()}</span>
+                                <span style="font-weight: 600; color: #2b5f8a;">GHS ${Number.isFinite(hostel.price) ? hostel.price.toLocaleString() : 'N/A'}</span>
                             </div>
-                        `).join('') : '<p style="text-align: center; padding: 20px;">No active bookings</p>'
+                        `).join('') : '<p style="text-align: center; padding: 20px; color: #6c7e82;">No hostels saved yet. Explore the homepage to bookmark your favorites!</p>'
                 }
                 </div>
 
-                <!-- Profile Summary - ONLY from signup registration -->
+                <!-- Verified Account Summary (From Database) -->
                 <div class="card">
-                    <h3><i class="fas fa-user-circle" style="color: #2b5f8a;"></i> Profile Summary</h3>
+                    <h3><i class="fas fa-user-circle" style="color: #2b5f8a;"></i> Verified Profile</h3>
                     <div class="profile-row">
                         <span class="profile-label">Full Name</span>
-                        <span class="profile-value">${user.fullName || 'Not provided'}</span>
+                        <span class="profile-value">${escapeHtml(user.fullName || 'Not provided')}</span>
                     </div>
                     <div class="profile-row">
-                        <span class="profile-label">Email</span>
-                        <span class="profile-value">${user.email || 'Not provided'}</span>
+                        <span class="profile-label">Email Address</span>
+                        <span class="profile-value">${escapeHtml(user.email || 'Not provided')}</span>
                     </div>
                     <div class="profile-row">
-                        <span class="profile-label">Phone</span>
-                        <span class="profile-value">${user.phone || 'Not provided'}</span>
+                        <span class="profile-label">Phone Number</span>
+                        <span class="profile-value">${escapeHtml(user.phone || 'Not provided')}</span>
                     </div>
-                    <!-- Only show studentId if user registered with it -->
                     ${user.studentId ? `
                     <div class="profile-row">
                         <span class="profile-label">Student ID</span>
-                        <span class="profile-value">${user.studentId}</span>
+                        <span class="profile-value">${escapeHtml(user.studentId)}</span>
                     </div>
                     ` : ''}
-                    <!-- Only show program if user registered with it -->
                     ${user.program ? `
                     <div class="profile-row">
-                        <span class="profile-label">Program</span>
-                        <span class="profile-value">${user.program}</span>
+                        <span class="profile-label">Academic Program</span>
+                        <span class="profile-value">${escapeHtml(user.program)}</span>
                     </div>
                     ` : ''}
                 </div>
             </div>
 
-            <!-- Second Row -->
-            <div class="two-columns">
-                <!-- Booking History -->
-                <div class="card">
-                    <h3><i class="fas fa-history" style="color: #f4a261;"></i> Booking History</h3>
-                    ${bookingHistory.length > 0 ?
-                    bookingHistory.map(booking => `
-                            <div class="booking-item">
-                                <div class="booking-info">
-                                    <h4>${booking.hostel}</h4>
-                                    <p>${booking.room} • ${booking.date}</p>
-                                </div>
-                                <span class="status-confirmed" style="background:#e3f2fd; color:#1565c0;">COMPLETED</span>
-                            </div>
-                        `).join('') : '<p style="text-align: center; padding: 20px;">No booking history</p>'
-                }
-                </div>
-
-                <!-- Saved/Favorite Hostels -->
-                <div class="card">
-                    <h3><i class="fas fa-heart" style="color: #e76f51;"></i> Saved Hostels</h3>
-                    ${favoriteHostels.length > 0 ?
-                    favoriteHostels.map(hostel => `
-                            <div class="booking-item">
-                                <div>
-                                    <strong>${hostel.name}</strong><br>
-                                    <small>${hostel.location}</small>
-                                </div>
-                                <span>${hostel.price}</span>
-                            </div>
-                        `).join('') : '<p style="text-align: center; padding: 20px;">No saved hostels yet</p>'
-                }
-                </div>
-            </div>
-
-            <!-- Recent Activity -->
+            <!-- Interaction Activity Feed (From the account API) -->
             <div class="card">
-                <h3><i class="fas fa-clock" style="color: #2b5f8a;"></i> Recent Activity</h3>
-                ${recentActivity.length > 0 ?
-                    recentActivity.map(activity => `
+                <h3><i class="fas fa-history" style="color: #2b5f8a;"></i> Recent Activity & Explored Pages</h3>
+                ${activities.length > 0 ?
+                    activities.map(activity => `
                         <div class="activity-item">
-                            <span>${activity.action}</span>
-                            <small>${activity.time}</small>
+                            <span><i class="fas fa-circle" style="font-size: 8px; color: #1f8a7c; margin-right: 8px;"></i> ${escapeHtml(activity.action)}</span>
+                            <small style="color: #6c7e82;">${escapeHtml(new Date(activity.time).toLocaleString())}</small>
                         </div>
-                    `).join('') : '<p style="text-align: center; padding: 20px;">No recent activity</p>'
+                    `).join('') : '<p style="text-align: center; padding: 20px; color: #6c7e82;">No recent activity recorded yet.</p>'
                 }
             </div>
         `;
         }
 
-        // Setup logout modal
+        // --- Handlers & Controllers ---
         const logoutBtn = document.getElementById('logoutBtn');
         const logoutModal = document.getElementById('logoutModal');
         const cancelBtn = document.getElementById('cancelLogoutBtn');
         const confirmBtn = document.getElementById('confirmLogoutBtn');
 
-        if (logoutBtn) {
-            logoutBtn.onclick = () => logoutModal.classList.add('show');
-        }
-        if (cancelBtn) {
-            cancelBtn.onclick = () => logoutModal.classList.remove('show');
-        }
+        if (logoutBtn) logoutBtn.onclick = () => logoutModal.classList.add('show');
+        if (cancelBtn) cancelBtn.onclick = () => logoutModal.classList.remove('show');
         if (confirmBtn) {
             confirmBtn.onclick = async () => {
                 try {
                     await fetch(`${API_URL}/logout`, {
-                    method: 'POST',
-                    credentials: 'include'
-                });
-                window.location.href = 'login.html';
+                        method: 'POST',
+                        credentials: 'include'
+                    });
                 } catch (error) {
-                    console.error('Logout failed:', error);
+                    console.error('Logout error:', error);
+                } finally {
+                    window.location.href = 'login.html';
                 }
-                
             };
         }
         if (logoutModal) {
@@ -626,17 +573,22 @@ const API_URL = API_CONFIG.AUTH_API;
             };
         }
 
-        // Search functionality
         const searchInput = document.getElementById('quickSearchInput');
         if (searchInput) {
-            searchInput.onkeypress = (e) => {
+            searchInput.onkeypress = async (e) => {
                 if (e.key === 'Enter' && searchInput.value.trim()) {
-                    window.location.href = `index.html?search=${encodeURIComponent(searchInput.value.trim())}`;
+                    const query = searchInput.value.trim();
+                    try {
+                        await logUserActivity('searched_hostels', { searchTerm: query });
+                    } catch (error) {
+                        console.error('Unable to record hostel search:', error);
+                    }
+                    window.location.href = `homepage.html?search=${encodeURIComponent(query)}`;
                 }
             };
         }
 
-        // Dark mode toggle
+        // Theme Toggle Persistence
         const themeToggle = document.getElementById('themeToggle');
         let isDark = localStorage.getItem('darkMode') === 'true';
         if (isDark) {
@@ -652,7 +604,7 @@ const API_URL = API_CONFIG.AUTH_API;
             };
         }
 
-        //initialize dashboard from backend by fetching user details
+        // --- Database Authentication Verification ---
         async function initDashboard() {
             try {
                 const response = await fetch(`${API_URL}/me`, {
@@ -661,18 +613,19 @@ const API_URL = API_CONFIG.AUTH_API;
 
                 if (response.ok) {
                     const data = await response.json();
-                    user = data.user;
-                    renderDashboard(user);
+                    user = data.user || data;
+                    const dashboard = await getDashboardData();
+                    renderDashboard(user, dashboard);
                 } else {
                     window.location.href = 'login.html';
                 }
             } catch (error) {
-                console.error('Error loading dashboard:', error);
-                window.location.href = 'login.html';
+                console.error('Failed to load dashboard data:', error);
+                document.getElementById('dashboardContainer').innerHTML =
+                    '<p style="text-align:center; padding:50px;">Unable to load your dashboard. Please refresh the page to try again.</p>';
             }
         }
 
-        // Render dashboard
         initDashboard();
     </script>
 

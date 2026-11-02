@@ -8,6 +8,79 @@ const API_URL = API_CONFIG.HOSTEL_API;
 let allHostels = [];
 let currentFilter = "all";
 let searchTerm = new URLSearchParams(window.location.search).get("search") || "";
+let priceRange = "all";
+const selectedAmenities = new Set();
+
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[character]);
+}
+
+function safeHttpUrl(value) {
+    try {
+        const url = new URL(value, window.location.origin);
+        return url.protocol === "http:" || url.protocol === "https:" ? url.href : "";
+    } catch {
+        return "";
+    }
+}
+
+function renderHostelCard(hostel) {
+    const imageUrl = safeHttpUrl(hostel.coverImage || hostel.image) ||
+        'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80';
+    const officialUrl = safeHttpUrl(hostel.officialUrl);
+
+    return `
+        <div class="hostel-card" data-id="${escapeHtml(hostel._id)}">
+            <div class="card-img">
+                 <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(hostel.name)}">
+            </div>
+            <div class="card-content">
+                <div class="card-title">
+                    ${escapeHtml(hostel.name)}
+                    <span class="price">GHS ${Number.isFinite(hostel.price) ? hostel.price.toLocaleString() : 'N/A'} / ${hostel.paymentTerm === 'per academic year' ? 'yr' : 'sem'}</span>
+                </div>
+                <div class="location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(hostel.location)} (${escapeHtml(hostel.distanceFromCampus || 'Walking distance')})</div>
+                <div class="amenities">
+                    ${(hostel.amenities || []).slice(0, 3).map(am => `<span class="amenity-tag">${escapeHtml(am)}</span>`).join('')}
+                    ${(hostel.amenities || []).length > 3 ? `<span class="amenity-tag">+${hostel.amenities.length - 3}</span>` : ''}
+                </div>
+                ${officialUrl ? `
+                    <div style="margin-top: 10px;">
+                        <a href="${escapeHtml(officialUrl)}" target="_blank" rel="noopener noreferrer" style="font-size: 12px; color: #3498db; text-decoration: none; font-weight: 600;">
+                            Visit Official Site <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function renderAmenityFilters() {
+    const container = document.getElementById("amenityFilters");
+    if (!container) return;
+
+    const amenities = [...new Set(allHostels
+        .flatMap(hostel => Array.isArray(hostel.amenities) ? hostel.amenities : [])
+        .map(amenity => String(amenity).trim())
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b)))];
+
+    container.innerHTML = `
+        <button class="filter-btn active" type="button" data-amenity="" aria-pressed="true">Any</button>
+        ${amenities.map(amenity => `
+            <button class="filter-btn" type="button" data-amenity="${escapeHtml(amenity)}" aria-pressed="false">
+                ${escapeHtml(amenity)}
+            </button>
+        `).join('')}
+    `;
+}
 
 // Fetch hostels from MongoDB backend API
 async function loadHostelsFromAPI() {
@@ -26,11 +99,12 @@ async function loadHostelsFromAPI() {
         const response = await fetch(API_URL);
         const result = await response.json();
 
-        if (result.success && result.data.length > 0) {
+        if (response.ok && result.success && Array.isArray(result.data)) {
             allHostels = result.data;
+            renderAmenityFilters();
             renderHostels();
         } else {
-            grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px;">🏝️ No hostels found in the database.</div>`;
+            grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px;">Unable to load hostels right now.</div>`;
         }
     } catch (error) {
         console.error('Failed to fetch hostels:', error);
@@ -48,9 +122,6 @@ function renderHostels() {
     // Apply filter button logic
     if (currentFilter === "available") {
         filtered = filtered.filter(h => h.isAvailable === true);
-    } else if (currentFilter === "limited") {
-        // Can be mapped based on your schema or custom logic
-        filtered = filtered.filter(h => h.isAvailable === true); 
     } else if (currentFilter === "nearby") {
         filtered = filtered.filter(h => h.distanceFromCampus && h.distanceFromCampus.toLowerCase().includes('walk'));
     } else if (currentFilter === "budget") {
@@ -59,12 +130,27 @@ function renderHostels() {
         filtered = filtered.filter(h => h.distanceFromCampus && !h.distanceFromCampus.toLowerCase().includes('walk'));
     }
 
+    if (priceRange === "under-2000") {
+        filtered = filtered.filter(hostel => hostel.price < 2000);
+    } else if (priceRange === "2000-3000") {
+        filtered = filtered.filter(hostel => hostel.price >= 2000 && hostel.price <= 3000);
+    } else if (priceRange === "over-3000") {
+        filtered = filtered.filter(hostel => hostel.price > 3000);
+    }
+
+    if (selectedAmenities.size > 0) {
+        filtered = filtered.filter(hostel => {
+            const amenities = (hostel.amenities || []).map(amenity => amenity.toLowerCase());
+            return [...selectedAmenities].every(amenity => amenities.includes(amenity));
+        });
+    }
+
     // Apply search input query
     if (searchTerm.trim() !== "") {
         const term = searchTerm.trim().toLowerCase();
         filtered = filtered.filter(h =>
-            h.name.toLowerCase().includes(term) ||
-            h.location.toLowerCase().includes(term)
+            (h.name || "").toLowerCase().includes(term) ||
+            (h.location || "").toLowerCase().includes(term)
         );
     }
 
@@ -73,32 +159,7 @@ function renderHostels() {
         return;
     }
 
-    // Map database fields to your exact original HTML card structure
-    grid.innerHTML = filtered.map(hostel => `
-        <div class="hostel-card" data-id="${hostel._id}">
-            <div class="card-img">
-                 <img src="${hostel.coverImage || hostel.image || 'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80'}" alt="${hostel.name}">
-            </div>
-            <div class="card-content">
-                <div class="card-title">
-                    ${hostel.name}
-                    <span class="price">GHS ${hostel.price.toLocaleString()} / ${hostel.paymentTerm === 'per academic year' ? 'yr' : 'sem'}</span>
-                </div>
-                <div class="location"><i class="fas fa-map-marker-alt"></i> ${hostel.location} (${hostel.distanceFromCampus || 'Walking distance'})</div>
-                <div class="amenities">
-                    ${(hostel.amenities || []).slice(0, 3).map(am => `<span class="amenity-tag">${am}</span>`).join('')}
-                    ${(hostel.amenities || []).length > 3 ? `<span class="amenity-tag">+${hostel.amenities.length - 3}</span>` : ''}
-                </div>
-                ${hostel.officialUrl ? `
-                    <div style="margin-top: 10px;">
-                        <a href="${hostel.officialUrl}" target="_blank" style="font-size: 12px; color: #3498db; text-decoration: none; font-weight: 600;">
-                            Visit Official Site <i class="fas fa-external-link-alt"></i>
-                        </a>
-                    </div>
-                ` : ''}
-            </div>
-        </div>
-    `).join('');
+    grid.innerHTML = filtered.map(renderHostelCard).join('');
 }
 
 // ---------- STUDENT REVIEWS (testimonials) ----------
@@ -174,7 +235,7 @@ function renderTestimonials() {
 
 // Event listeners for filters and search
 function setupEventListeners() {
-    const filterBtns = document.querySelectorAll(".filter-btn");
+    const filterBtns = document.querySelectorAll("#filterGroup .filter-btn");
     filterBtns.forEach(btn => {
         btn.addEventListener("click", () => {
             filterBtns.forEach(b => b.classList.remove("active"));
@@ -189,6 +250,40 @@ function setupEventListeners() {
         if (searchTerm) searchInput.value = searchTerm;
         searchInput.addEventListener("input", (e) => {
             searchTerm = e.target.value;
+            renderHostels();
+        });
+    }
+
+    const priceFilter = document.getElementById("priceFilter");
+    if (priceFilter) {
+        priceFilter.addEventListener("change", () => {
+            priceRange = priceFilter.value;
+            renderHostels();
+        });
+    }
+
+    const amenityFilters = document.getElementById("amenityFilters");
+    if (amenityFilters) {
+        amenityFilters.addEventListener("click", event => {
+            const button = event.target.closest("button[data-amenity]");
+            if (!button) return;
+
+            const amenity = button.dataset.amenity.toLowerCase();
+            if (!amenity) {
+                selectedAmenities.clear();
+            } else if (selectedAmenities.has(amenity)) {
+                selectedAmenities.delete(amenity);
+            } else {
+                selectedAmenities.add(amenity);
+            }
+
+            amenityFilters.querySelectorAll("button[data-amenity]").forEach(filterButton => {
+                const selected = filterButton.dataset.amenity
+                    ? selectedAmenities.has(filterButton.dataset.amenity.toLowerCase())
+                    : selectedAmenities.size === 0;
+                filterButton.classList.toggle("active", selected);
+                filterButton.setAttribute("aria-pressed", String(selected));
+            });
             renderHostels();
         });
     }

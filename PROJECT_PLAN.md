@@ -150,12 +150,12 @@ Status: **Substantial, with remaining gaps**
 
 ### Milestone 7 — Authenticated UI
 
-Status: **UI complete; data still mocked**
+Status: **UI complete; hostel and student activity data connected to the API**
 
 - Built an authenticated homepage showing:
   - welcome banner,
   - user avatar initials,
-  - recommended hostel cards,
+  - API-backed hostel cards with live search, availability/budget/nearby filters, price ranges, and amenity filters,
   - recent activity,
   - logout confirmation modal.
 - Built a dashboard showing:
@@ -169,7 +169,9 @@ Status: **UI complete; data still mocked**
   - dark mode toggle,
   - quick search and logout.
 - Wired both pages to `GET /api/me` for the real user identity.
-- Bookings, favourites, activity, and spending figures are currently sample data.
+- Homepage hostels are loaded from the MongoDB-backed hostel API.
+- Saved hostels and recent activity are persisted per user; dashboard exploration counts distinct hostels rather than repeat page views. Successful logins are recorded once per successful login request, not on homepage reloads.
+- Bookings and spending figures are still not implemented.
 
 ### Milestone 8 — Public landing page and discovery UI
 
@@ -177,7 +179,7 @@ Status: **Complete as a frontend prototype**
 
 - Built a landing page with hero section, statistics, search, filters, hostel cards, and student testimonials.
 - Added filtering by availability, budget, nearby, and far.
-- Added live client-side name/location search.
+- Added live name/location search, price-range selection, and amenity chips populated from API data on the public landing page and authenticated homepage.
 - Added hostel cards linking to official hostel websites.
 - Added contact form handled by Netlify Forms and a thank-you page.
 - Added pricing/payment preview UI (visual only).
@@ -225,32 +227,26 @@ Status: **Complete**
 
 ### High priority
 
-1. **Password reset can bypass OTP verification.** `/api/reset-password` trusts any supplied email. The verification step does not create a server-side verified marker. Anyone who knows an email can reset that account.
-2. **Temporary signup stores plaintext passwords in the session store.** Move to a short-lived signed token or encrypted record, or hash before temporary storage.
-3. **`POST /api/signup` bypasses OTP and password-strength validation.** Remove it or restrict it to internal/admin use.
-4. **No hostel data model or hostel API.** Hostel data is duplicated in `landingpage.js` and `homepage.html` and is not persisted.
-5. **Bookings, favourites, activity, and dashboard stats are mock data.**
-6. **`middleware/authMiddleware.js` and `routes/hostelRoutes.js` are empty.** Protected-route middleware has not been implemented.
-7. **No centralized error handling or request validation layer.**
-8. **Debug middleware logs full session data and session IDs** in `server.js`; remove for production.
+1. **Hostel management has no admin authorization.** Any authenticated user can currently create a hostel through `POST /api/hostels`.
+2. **OTP codes are stored in plaintext and have no per-code attempt counter.** The auth rate limiter is the only attempt protection.
+3. **Input validation is inconsistent across routes, and there is no centralized validation layer.**
+4. **`middleware/authMiddleware.js` is empty and unused.** `middleware/auth.js` currently protects authenticated routes, but role-based authorization is not implemented.
+5. **There are no committed automated tests or CI checks.** The recent activity/favorites flow has only been smoke-tested.
 
 ### Medium priority
 
-9. OTPs are stored in plaintext and have no attempt limit or cooldown beyond rate limiting.
-10. Frontend API base URL is hardcoded to Render in every file, preventing clean local development.
-11. No `.env.example`, setup instructions, or API documentation.
-12. No automated tests or CI pipeline beyond PR review.
-13. Contact form, payment screen, and "Start Booking" button are not connected to backend logic.
-14. Login error messages reveal whether a username exists.
-15. No account roles, admin interface, or hostel management workflow.
+6. Bookings and spending figures are still sample data; contact and payment actions are not connected to booking workflows.
+7. There is no `.env.example` or top-level setup README.
+8. Password reset now requires a verified session marker with a 10-minute expiry, temporary signup stores a bcrypt hash, and direct signup returns `403`; these changes still need automated regression coverage.
+9. No account roles or admin interface.
 
 ### Low priority
 
-16. `OTP` model contains an unused `signupData` field.
-17. The sitemap only lists static pages.
-18. Some UI copy and footer links (KNUST, UG, UCC) are unrelated to GCTU.
-19. No image asset pipeline; hostel images rely on external URLs.
-20. Accessibility, Lighthouse performance, and mobile QA have not been formally tested.
+10. `OTP` model contains an unused `signupData` field.
+11. The sitemap only lists static pages.
+12. Some UI copy and footer links (KNUST, UG, UCC) are unrelated to GCTU.
+13. No image asset pipeline; hostel images rely on external URLs.
+14. Accessibility, Lighthouse performance, and mobile QA have not been formally tested.
 
 ---
 
@@ -258,51 +254,32 @@ Status: **Complete**
 
 ### Phase 1 — Security and cleanup (1 week)
 
-Objective: make the existing authentication system safe and production-ready.
+Status: **Core bypass fixes implemented; OTP hardening, broad validation, and regression tests remain.**
 
-- Add a server-side verified-reset mechanism:
-  - on successful `/api/verify-reset-otp`, set a short-lived signed reset token or session flag tied to the email;
-  - require it in `/api/reset-password`;
-  - invalidate it after use.
-- Remove or protect `POST /api/signup`.
-- Stop storing plaintext passwords in the session.
 - Hash OTP codes before storage and add an attempt counter.
-- Remove session debug logging.
-- Add basic input validation for all routes.
-- Add centralized error handling middleware.
+- Add consistent input validation for all routes and targeted auth integration tests.
 - Add `.env.example` and rotate any exposed credentials.
-- Use a generic login failure message.
 
 **Acceptance criteria:** no auth endpoint can be used without completing its intended prior step; no plaintext password or debug session data is stored or logged.
 
 ### Phase 2 — Hostel catalog API (1–2 weeks)
 
-Objective: replace hardcoded hostel data with a real database-backed catalog.
+Status: **Core model, seed data, read API, and frontend API loading are implemented; admin authorization, pagination, and broader API testing remain.**
 
-- Create `models/Hostel.js` with name, slug, description, location, price, price label, amenities, availability, category, distance, images, official URL, contact details, and timestamps.
-- Create `routes/hostelRoutes.js`:
-  - `GET /api/hostels` with search, filter, sort, and pagination;
-  - `GET /api/hostels/:id`;
-  - protected admin create/update/delete endpoints.
-- Add a seed script with the current six hostels.
-- Register routes in `server.js`.
-- Build `middleware/authMiddleware.js` with `requireAuth` and `requireAdmin`.
-- Refactor `landingpage.js` and `homepage.html` to fetch hostels from the API.
-- Add loading, empty, and error states.
+- Extend the current hostel routes with pagination and admin-only create/update/delete operations.
+- Add `requireAdmin` authorization and connect it to a user role.
+- Continue replacing any remaining hardcoded hostel content with API data.
+- Add integration coverage for public listing, filters, and protected writes.
 
 **Acceptance criteria:** one source of truth for hostel data; public listing works while unauthenticated; admin writes are protected.
 
 ### Phase 3 — User activity, favourites, and bookings (2 weeks)
 
-Objective: make the dashboard reflect real user actions.
+Status: **Favorites, activity events, and dashboard counts are now persisted per user; bookings remain unimplemented.**
 
-- Create `Booking`, `Favorite`, and `Activity` models.
-- Add endpoints for:
-  - saving/removing favourites,
-  - creating and listing booking requests,
-  - recording and reading activity,
-  - dashboard summary statistics.
-- Replace mock arrays in `homepage.html` and `dashboard.html`.
+- Create a `Booking` model and endpoints for booking requests.
+- Add integration tests for favorite isolation and dashboard summaries.
+- Continue replacing any remaining mock data on the dashboard.
 - Define the booking flow:
   - Option A (recommended for current scope): a booking request/referral that records interest and redirects to the hostel's official site.
   - Option B: in-app booking with payment (larger scope, phase 5).

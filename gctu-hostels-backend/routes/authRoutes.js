@@ -1,47 +1,61 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const router = express.Router();
 const User = require('../models/User');
 const OTP = require('../models/OTP');
+const Activity = require('../models/Activity');
 const { sendEmail } = require('../config/email');
 const validatePassword = require('../utils/passwordValidator');
 const isAuthenticated = require('../middleware/auth');
 
 router.post('/send-otp', async (req, res) => {
-    try{
-    const { email, fullName, username, password } = req.body;
-	if (!email || !fullName || !username || !password) {
-        return res.status(400).json({ error: 'All fields are required' });
-    }
-    const passwordCheck = validatePassword(password);
-    if (!passwordCheck.isValid) {
-        return res.status(400).json({ error: passwordCheck.errors[0] });
-    }
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
-    if (existingUser) {
-        return res.status(400).json({ error: 'Username or email already exists' });
-    }
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    try {
+        const { email, fullName, username, password } = req.body;
 
-    await OTP.deleteMany({ email });
-    await OTP.create({ email, code, expiresAt: new Date(Date.now() + 10 * 60 * 1000) });
+        if (!email || !fullName || !username || !password) {
+            return res.status(400).json({ error: 'All fields are required' });
+        }
 
-const emailHtml = `
-    <div style="font-family: Arial, sans-serif;">
-        <h2>Welcome to GCTU StudentHostels!</h2>
-        <p>Your OTP code is:</p>
-        <h1 style="color: #f4a261;">${code}</h1>
-        <p>This code expires in 10 minutes.</p>
-    </div>
-`;
+        const passwordCheck = validatePassword(password);
+        if (!passwordCheck.isValid) {
+            return res.status(400).json({ error: passwordCheck.errors[0] });
+        }
 
-    const emailResult = await sendEmail(email, 'Verify Your Email - GCTU StudentHostels', emailHtml);
-	if (!emailResult.success) {
-        return res.status(500).json({ error: 'Failed to send OTP email' });
-    }
-        req.session.tempSignup = { fullName, username, email, password };
-        await req.session.save(); 
-	res.json({ message: 'OTP sent to your email' });
-	} catch (error) {
+        const normalizedEmail = email.trim().toLowerCase();
+        const existingUser = await User.findOne({ $or: [{ email: normalizedEmail }, { username: username.trim() }] });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Username or email already exists' });
+        }
+
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        await OTP.deleteMany({ email: normalizedEmail });
+        await OTP.create({ email: normalizedEmail, code, expiresAt: new Date(Date.now() + 10 * 60 * 1000) });
+
+        const emailHtml = `
+            <div style="font-family: Arial, sans-serif;">
+                <h2>Welcome to GCTU StudentHostels!</h2>
+                <p>Your OTP code is:</p>
+                <h1 style="color: #f4a261;">${code}</h1>
+                <p>This code expires in 10 minutes.</p>
+            </div>
+        `;
+
+        const emailResult = await sendEmail(normalizedEmail, 'Verify Your Email - GCTU StudentHostels', emailHtml);
+        if (!emailResult.success) {
+            return res.status(500).json({ error: 'Failed to send OTP email' });
+        }
+
+        req.session.tempSignup = {
+            fullName: fullName.trim(),
+            username: username.trim(),
+            email: normalizedEmail,
+            passwordHash: await bcrypt.hash(password, 12),
+            createdAt: Date.now()
+        };
+
+        await req.session.save();
+        res.json({ message: 'OTP sent to your email' });
+    } catch (error) {
         console.error('Email error:', error);
         res.status(500).json({ error: 'Server error' });
     }
@@ -56,9 +70,10 @@ router.post('/verify-otp', async (req, res) => {
             return res.status(400).json({ error: 'Email and code are required' });
         }
 
-        //FIND VALID OTP
+        const normalizedEmail = email.trim().toLowerCase();
+
         const otpRecord = await OTP.findOne({
-            email,
+            email: normalizedEmail,
             code,
             expiresAt: { $gt: new Date() },
             used: false
@@ -68,31 +83,40 @@ router.post('/verify-otp', async (req, res) => {
             return res.status(400).json({ error: 'Invalid or expired OTP code' });
         }
 
-        //MATCH OTP
         otpRecord.used = true;
         await otpRecord.save();
 
-        //GET TEMPORARY SIGNUP DATA FROM SESSION
-        const { fullName, username, password } = req.session.tempSignup || {};
+        const { fullName, username, passwordHash } = req.session.tempSignup || {};
 
-        if (!fullName || !username || !password) {
+        if (!fullName || !username || !passwordHash) {
             return res.status(400).json({ error: 'Signup session expired. Please try again.' });
         }
 
-        // Create user (password will be hashed by pre-save middleware)
-        const user = new User({ fullName, username, email, password });
-        await user.save();
+        const existingUser = await User.findOne({ $or: [{ email: normalizedEmail }, { username }] });
+        if (existingUser) {
+            return res.status(400).json({ error: 'Username or email already exists' });
+        }
 
-        //CLEAR TEMP DATA
+        const user = await User.collection.insertOne({
+            fullName,
+            username,
+            email: normalizedEmail,
+            role: 'student',
+            password: passwordHash,
+            createdAt: new Date()
+        });
+
         delete req.session.tempSignup;
+
+        const createdUser = await User.findById(user.insertedId).select('-password');
 
         res.status(201).json({
             message: 'Account created successfully! Please login.',
             user: {
-                id: user._id,
-                fullName: user.fullName,
-                username: user.username,
-                email: user.email
+                id: createdUser._id,
+                fullName: createdUser.fullName,
+                username: createdUser.username,
+                email: createdUser.email
             }
         });
 
@@ -104,76 +128,64 @@ router.post('/verify-otp', async (req, res) => {
 
 //signup route
 router.post('/signup', async (req, res) => {
-        const { fullName, username, email, password } = req.body;
-            if (!fullName || !username || !email || !password) {
-        return res.status(400).json({ error: 'All fields are required' });
-    }
-        const existingUser = await User.findOne({
-        $or: [{ email }, { username }]
+    return res.status(403).json({
+        error: 'Direct signup is disabled. Please complete OTP signup first.'
     });
-        if (existingUser) {
-        return res.status(400).json({ error: 'Username or email already exists' });
-    }
-        const user = new User({
-        fullName,
-        username,
-        email,
-        password
-    });
-        await user.save();
-            res.status(201).json({
-        message: 'User created successfully',
-        user: {
-            id: user._id,
-            fullName: user.fullName,
-            username: user.username,
-            email: user.email
-        }
-    });
-    });
+});
 
-    //login route
-    //login route
+//login route
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
-    if (!username || !password) return res.status(400).json({ error: 'All fields are required' });
+
+    if (!username || !password) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
     try {
-        const user = await User.findOne({ username });
-        if (!user) return res.status(401).json({ error: 'Invalid username or password' });
-        
+        const user = await User.findOne({ username: username.trim() });
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid username or password' });
+        }
+
         const isMatch = await user.comparePassword(password);
-        if (!isMatch) return res.status(401).json({ error: 'Invalid username or password' });
-        
-        // Regenerate session to prevent session fixation attacks
-        req.session.regenerate((err) => {
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Invalid username or password' });
+        }
+
+        req.session.regenerate(async (err) => {
             if (err) {
                 console.error('Session regeneration error:', err);
                 return res.status(500).json({ error: 'Server error during login' });
             }
-            
+
             req.session.userId = user._id;
-            
-            // Explicitly save session to MongoDB before responding
+
+            try {
+                await Activity.create({ user: user._id, type: 'login' });
+            } catch (activityError) {
+                console.error('Unable to record successful login activity:', activityError);
+            }
+
             req.session.save((saveErr) => {
                 if (saveErr) {
                     console.error('Session save error:', saveErr);
                     return res.status(500).json({ error: 'Server error during login' });
                 }
 
-                res.json({ 
-                    message: 'Login successful', 
-                    user: { 
-                        id: user._id, 
-                        fullName: user.fullName, 
-                        username: user.username, 
-                        email: user.email 
-                    } 
+                res.json({
+                    message: 'Login successful',
+                    user: {
+                        id: user._id,
+                        fullName: user.fullName,
+                        username: user.username,
+                        email: user.email
+                    }
                 });
             });
         });
-    } catch (error) { 
-        console.error('Login catch error:', error); 
-        res.status(500).json({ error: 'Server error during login' }); 
+    } catch (error) {
+        console.error('Login catch error:', error);
+        res.status(500).json({ error: 'Server error during login' });
     }
 });
 
@@ -196,7 +208,6 @@ router.post('/login', async (req, res) => {
 // /me route (protected by middleware)
 router.get('/me', isAuthenticated, async (req, res) => {
     try {
-        console.log('Looking for user with ID:', req.session.userId);
         const user = await User.findById(req.session.userId).select('-password');
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -260,38 +271,42 @@ router.post('/forgot-password', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
     try {
         const { email, newPassword } = req.body;
-        
+
         if (!email || !newPassword) {
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
         const normalizedEmail = email.trim().toLowerCase();
+        const resetVerifiedAt = req.session.resetVerifiedAt;
 
-        // The user must have verified the OTP for this email first
         if (!req.session.resetEmail || req.session.resetEmail !== normalizedEmail) {
             return res.status(401).json({ error: 'Please verify the OTP code before resetting your password' });
         }
-        
-        // Validate new password strength
+
+        if (!resetVerifiedAt || Date.now() - resetVerifiedAt > 10 * 60 * 1000) {
+            delete req.session.resetEmail;
+            delete req.session.resetVerifiedAt;
+            return res.status(401).json({ error: 'Password reset session expired. Please request a new code.' });
+        }
+
         const passwordCheck = validatePassword(newPassword);
         if (!passwordCheck.isValid) {
             return res.status(400).json({ error: passwordCheck.errors[0] });
         }
-        
-        // Find user
+
         const user = await User.findOne({ email: normalizedEmail });
         if (!user) {
             return res.status(404).json({ error: 'If an account with that email exists, a password reset code has been sent.' });
         }
-        
-        // Update password
+
         user.password = newPassword;
         await user.save();
 
         delete req.session.resetEmail;
-        
+        delete req.session.resetVerifiedAt;
+
         res.json({ message: 'Password reset successfully' });
-        
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server error' });
@@ -302,30 +317,30 @@ router.post('/reset-password', async (req, res) => {
 router.post('/verify-reset-otp', async (req, res) => {
     try {
         const { email, code } = req.body;
-        
+
         if (!email || !code) {
             return res.status(400).json({ error: 'Email and code are required' });
         }
 
         const normalizedEmail = email.trim().toLowerCase();
-        
+
         const otpRecord = await OTP.findOne({
             email: normalizedEmail,
             code,
             expiresAt: { $gt: new Date() },
             used: false
         });
-        
+
         if (!otpRecord) {
             return res.status(400).json({ error: 'Invalid or expired code' });
         }
-        
-        // Mark OTP as used
+
         otpRecord.used = true;
         await otpRecord.save();
 
-        // Allow the reset-password route to run for this email
         req.session.resetEmail = normalizedEmail;
+        req.session.resetVerifiedAt = Date.now();
+
         req.session.save((err) => {
             if (err) {
                 console.error('Reset session save error:', err);
@@ -333,7 +348,7 @@ router.post('/verify-reset-otp', async (req, res) => {
             }
             res.json({ message: 'OTP verified successfully' });
         });
-        
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server error' });

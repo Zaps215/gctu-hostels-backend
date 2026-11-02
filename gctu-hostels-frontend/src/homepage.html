@@ -8,7 +8,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700;800;900&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -174,6 +174,83 @@
             gap: 10px;
         }
 
+        .hostel-search-panel {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            margin: 0 0 24px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            display: grid;
+            gap: 16px;
+        }
+
+        .hostel-search-input {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 16px;
+            background: #f8f5ee;
+            border-radius: 40px;
+            color: #6c7e82;
+        }
+
+        .hostel-search-input input {
+            width: 100%;
+            min-width: 0;
+            padding: 14px 0;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: #1e2a2f;
+            font: inherit;
+        }
+
+        .hostel-filter-row,
+        .amenity-filter-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .hostel-filter-chip {
+            padding: 9px 16px;
+            border: 0;
+            border-radius: 30px;
+            background: #f0eee9;
+            color: #1e2a2f;
+            font: inherit;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .hostel-filter-chip.active {
+            background: #2b5f8a;
+            color: white;
+        }
+
+        .hostel-filter-chip:focus-visible,
+        .hostel-price-select:focus-visible,
+        .hostel-search-input input:focus-visible {
+            outline: 2px solid #1f8a7c;
+            outline-offset: 2px;
+        }
+
+        .hostel-price-select {
+            border: 0;
+            border-radius: 30px;
+            padding: 10px 14px;
+            background: #f0eee9;
+            color: #1e2a2f;
+            font: inherit;
+        }
+
+        .filter-label {
+            color: #53676b;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
         /* Hostels Grid */
         .hostels-grid {
             display: grid;
@@ -265,47 +342,6 @@
         .book-btn:hover {
             background: #e76f51;
             color: white;
-        }
-
-        /* Recent Activity */
-        .activity-card {
-            background: white;
-            border-radius: 28px;
-            padding: 24px;
-            margin-bottom: 40px;
-        }
-
-        .activity-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px 0;
-            border-bottom: 1px solid #f0ebe2;
-        }
-
-        .activity-icon {
-            width: 45px;
-            height: 45px;
-            background: #f0f7f3;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: #2b5f8a;
-        }
-
-        .activity-detail {
-            flex: 1;
-        }
-
-        .activity-detail p {
-            font-weight: 500;
-        }
-
-        .activity-time {
-            font-size: 12px;
-            color: #999;
         }
 
         /* Modal Popup */
@@ -638,7 +674,6 @@
             <ul class="nav-links">
                 <li><a href="#">Home</a></li>
                 <li><a href="#hostels">Hostels</a></li>
-                <li><a href="#activity">Activity</a></li>
             </ul>
             <div class="nav-right">
                 <a href="dashboard.html" class="dashboard-link"><i class="fas fa-chart-line"></i> Dashboard</a>
@@ -665,14 +700,33 @@
             <i class="fas fa-building" style="color: #f4a261;"></i>
             <span>🏘️ Recommended Hostels Near You</span>
         </div>
+        <div class="hostel-search-panel" aria-label="Search and filter hostels">
+            <label class="hostel-search-input">
+                <i class="fas fa-search" aria-hidden="true"></i>
+                <input id="hostelSearchInput" type="search" placeholder="Search by hostel name or location" aria-label="Search hostels by name or location">
+            </label>
+            <div class="hostel-filter-row" id="hostelQuickFilters" aria-label="Quick hostel filters">
+                <button class="hostel-filter-chip active" type="button" data-filter="all" aria-pressed="true">All</button>
+                <button class="hostel-filter-chip" type="button" data-filter="available" aria-pressed="false">Available now</button>
+                <button class="hostel-filter-chip" type="button" data-filter="budget" aria-pressed="false">Budget (≤ GHS 3,000)</button>
+                <button class="hostel-filter-chip" type="button" data-filter="nearby" aria-pressed="false">Walking distance</button>
+                <label class="filter-label" for="hostelPriceFilter">Price</label>
+                <select class="hostel-price-select" id="hostelPriceFilter">
+                    <option value="all">Any price</option>
+                    <option value="under-2000">Under GHS 2,000</option>
+                    <option value="2000-3000">GHS 2,000–3,000</option>
+                    <option value="over-3000">Over GHS 3,000</option>
+                </select>
+            </div>
+            <div class="amenity-filter-row">
+                <span class="filter-label">Amenities</span>
+                <div class="hostel-filter-row" id="hostelAmenityFilters" aria-label="Filter hostels by amenities">
+                    <span class="filter-label">Loading amenities…</span>
+                </div>
+            </div>
+        </div>
         <div id="hostelsGrid" class="hostels-grid"></div>
 
-        <!-- Recent Activity Section -->
-        <div class="section-title" id="activity">
-            <i class="fas fa-clock" style="color: #2b5f8a;"></i>
-            <span>🕐 Recent Activity</span>
-        </div>
-        <div class="activity-card" id="activityContainer"></div>
     </div>
 
     <!-- Logout Modal -->
@@ -693,9 +747,25 @@
             for students</p>
     </footer>
     <script src="config.js"></script>
+    <script src="utils/activityLogger.js"></script>
     <script>
         const API_URL = API_CONFIG.AUTH_API;
         const HOSTEL_API_URL = API_CONFIG.HOSTEL_API;
+        let allHostels = [];
+        let activeQuickFilter = 'all';
+        let activePriceFilter = 'all';
+        const selectedAmenities = new Set();
+        let searchActivityTimer;
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[character]);
+        }
 
         // Get initials
         function getInitials(name) {
@@ -707,41 +777,151 @@
             return name.substring(0, 2).toUpperCase();
         }
 
+        function getFilteredHostels() {
+            const searchTerm = document.getElementById('hostelSearchInput').value.trim().toLowerCase();
+
+            return allHostels.filter(hostel => {
+                const name = (hostel.name || '').toLowerCase();
+                const location = (hostel.location || '').toLowerCase();
+                const amenities = Array.isArray(hostel.amenities)
+                    ? hostel.amenities.map(amenity => String(amenity).toLowerCase())
+                    : [];
+                const distance = (hostel.distanceFromCampus || '').toLowerCase();
+
+                if (searchTerm && !name.includes(searchTerm) && !location.includes(searchTerm)) return false;
+                if (activeQuickFilter === 'available' && hostel.isAvailable !== true) return false;
+                if (activeQuickFilter === 'budget' && hostel.price > 3000) return false;
+                if (activeQuickFilter === 'nearby' && !distance.includes('walk')) return false;
+                if ([...selectedAmenities].some(amenity => !amenities.includes(amenity))) return false;
+
+                if (activePriceFilter === 'under-2000' && hostel.price >= 2000) return false;
+                if (activePriceFilter === '2000-3000' && (hostel.price < 2000 || hostel.price > 3000)) return false;
+                if (activePriceFilter === 'over-3000' && hostel.price <= 3000) return false;
+
+                return true;
+            });
+        }
+
+        function renderHostels() {
+            const grid = document.getElementById('hostelsGrid');
+            const hostels = getFilteredHostels();
+
+            if (hostels.length === 0) {
+                grid.innerHTML = '<p style="text-align:center; padding: 20px;">No hostels match your search and filters.</p>';
+                return;
+            }
+
+            grid.innerHTML = hostels.map(hostel => `
+                <div class="hostel-card" data-hostel-id="${escapeHtml(hostel._id)}" style="cursor: pointer;">
+                    <div class="card-img">
+                        <img src="${escapeHtml(hostel.coverImage || hostel.image || 'https://images.unsplash.com/photo-1709805619372-40de3f158e83?w=400')}" alt="${escapeHtml(hostel.name)}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div class="card-content">
+                        <div class="card-title">
+                            ${escapeHtml(hostel.name)}
+                            <span class="price">GHS ${Number.isFinite(hostel.price) ? hostel.price.toLocaleString() : 'N/A'}</span>
+                        </div>
+                        <div class="location"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(hostel.location || 'Near GCTU Campus')}</div>
+                        <div class="amenities">
+                            ${Array.isArray(hostel.amenities) ? hostel.amenities.slice(0, 3).map(amenity => `<span class="amenity-tag">${escapeHtml(amenity)}</span>`).join('') : ''}
+                        </div>
+                        <a href="hostel-details.html?id=${encodeURIComponent(hostel._id)}" class="book-btn">
+                            View Details & Contact <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderAmenityFilters() {
+            const container = document.getElementById('hostelAmenityFilters');
+            const amenities = [...new Set(allHostels
+                .flatMap(hostel => Array.isArray(hostel.amenities) ? hostel.amenities : [])
+                .map(amenity => String(amenity).trim())
+                .filter(Boolean)
+                .sort((a, b) => a.localeCompare(b)))];
+
+            container.innerHTML = `
+                <button class="hostel-filter-chip active" type="button" data-amenity="" aria-pressed="true">Any</button>
+                ${amenities.map(amenity => `
+                    <button class="hostel-filter-chip" type="button" data-amenity="${escapeHtml(amenity)}" aria-pressed="false">
+                        ${escapeHtml(amenity)}
+                    </button>
+                `).join('')}
+            `;
+        }
+
+        function setupHostelFilters() {
+            const searchInput = document.getElementById('hostelSearchInput');
+            const initialSearch = new URLSearchParams(window.location.search).get('search') || '';
+            searchInput.value = initialSearch;
+            searchInput.addEventListener('input', () => {
+                renderHostels();
+                clearTimeout(searchActivityTimer);
+                const searchTerm = searchInput.value.trim();
+                if (searchTerm) {
+                    searchActivityTimer = setTimeout(() => {
+                        logUserActivity('searched_hostels', { searchTerm })
+                            .catch(error => console.error('Unable to record hostel search:', error));
+                    }, 700);
+                }
+            });
+
+            document.getElementById('hostelQuickFilters').addEventListener('click', event => {
+                const button = event.target.closest('button[data-filter]');
+                if (!button) return;
+                activeQuickFilter = button.dataset.filter;
+                document.querySelectorAll('#hostelQuickFilters button[data-filter]').forEach(filterButton => {
+                    const selected = filterButton === button;
+                    filterButton.classList.toggle('active', selected);
+                    filterButton.setAttribute('aria-pressed', String(selected));
+                });
+                renderHostels();
+            });
+
+            document.getElementById('hostelPriceFilter').addEventListener('change', event => {
+                activePriceFilter = event.target.value;
+                renderHostels();
+            });
+
+            const amenityContainer = document.getElementById('hostelAmenityFilters');
+            amenityContainer.addEventListener('click', event => {
+                const button = event.target.closest('button[data-amenity]');
+                if (!button) return;
+                const amenity = button.dataset.amenity.toLowerCase();
+
+                if (!amenity) {
+                    selectedAmenities.clear();
+                } else if (selectedAmenities.has(amenity)) {
+                    selectedAmenities.delete(amenity);
+                } else {
+                    selectedAmenities.add(amenity);
+                }
+
+                amenityContainer.querySelectorAll('button[data-amenity]').forEach(filterButton => {
+                    const selected = filterButton.dataset.amenity
+                        ? selectedAmenities.has(filterButton.dataset.amenity.toLowerCase())
+                        : selectedAmenities.size === 0;
+                    filterButton.classList.toggle('active', selected);
+                    filterButton.setAttribute('aria-pressed', String(selected));
+                });
+                renderHostels();
+            });
+        }
+
         // Fetch Hostels from Backend MongoDB
         async function loadHostels() {
             const grid = document.getElementById('hostelsGrid');
+            grid.innerHTML = '<p style="text-align:center; padding: 20px;">Loading hostels...</p>';
             try {
                 const response = await fetch(HOSTEL_API_URL);
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    const hostels = result.data;
+                    allHostels = Array.isArray(result.data) ? result.data : [];
                     
-                    if (hostels.length === 0) {
-                        grid.innerHTML = '<p style="text-align:center; padding: 20px;">No hostels available right now.</p>';
-                        return;
-                    }
-
-                    grid.innerHTML = hostels.map(hostel => `
-                        <div class="hostel-card" style="cursor: pointer;" onclick="window.location.href='hostel-details.html?id=${hostel._id}'">
-                            <div class="card-img">
-                                <img src="${hostel.coverImage || hostel.image || 'https://images.unsplash.com/photo-1709805619372-40de3f158e83?w=400'}" alt="${hostel.name}" style="width: 100%; height: 100%; object-fit: cover;">
-                            </div>
-                            <div class="card-content">
-                                <div class="card-title">
-                                    ${hostel.name}
-                                    <span class="price">GHS ${hostel.price ? hostel.price.toLocaleString() : 'N/A'}</span>
-                                </div>
-                                <div class="location"><i class="fas fa-map-marker-alt"></i> ${hostel.location || 'Near GCTU Campus'}</div>
-                                <div class="amenities">
-                                    ${hostel.amenities ? hostel.amenities.slice(0, 3).map(a => `<span class="amenity-tag">${a}</span>`).join('') : ''}
-                                </div>
-                                <a href="hostel-details.html?id=${hostel._id}" class="book-btn" onclick="event.stopPropagation();">
-                                    View Details & Contact <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    `).join('');
+                    renderAmenityFilters();
+                    renderHostels();
                 } else {
                     grid.innerHTML = '<p style="text-align:center;">Failed to load hostels.</p>';
                 }
@@ -751,24 +931,14 @@
             }
         }
 
-        let recentActivity = [
-            { action: "Logged into your account", time: "Just now", icon: "fa-sign-in-alt" }
-        ];
+        setupHostelFilters();
 
-        function renderActivity() {
-            const container = document.getElementById('activityContainer');
-            container.innerHTML = recentActivity.map(activity => `
-            <div class="activity-item">
-                <div class="activity-icon">
-                    <i class="fas ${activity.icon}"></i>
-                </div>
-                <div class="activity-detail">
-                    <p>${activity.action}</p>
-                    <span class="activity-time">${activity.time}</span>
-                </div>
-            </div>
-        `).join('');
-        }
+        document.getElementById('hostelsGrid').addEventListener('click', event => {
+            const card = event.target.closest('.hostel-card');
+            if (!card) return;
+            if (event.target.closest('a')) return;
+            window.location.href = `hostel-details.html?id=${encodeURIComponent(card.dataset.hostelId)}`;
+        });
 
         // Setup logout modal
         const logoutBtn = document.getElementById('logoutBtn');
@@ -803,33 +973,35 @@
 
         // Initialize Homepage & Session Check
         async function initHomepage() {
+            let user;
             try {
                 const response = await fetch(`${API_URL}/me`, {
                     credentials: 'include'  // Sends session cookie
                 });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    const user = data.user;
-
-                    // Update welcome banner
-                    const userName = user.fullName || user.username || 'Student';
-                    const firstName = userName.split(' ')[0];
-                    document.getElementById('welcomeMessage').innerHTML = `Welcome back, ${userName}! 👋`;
-                    document.getElementById('userNameDisplay').innerHTML = `<i class="fas fa-user-circle"></i> ${firstName}`;
-                    document.getElementById('avatarCircle').innerText = getInitials(userName);
-                    
-                    // Load dynamic content from database
-                    loadHostels();
-                    renderActivity();
-
-                } else {
-                    // Not logged in -> redirect to login
+                if (!response.ok) {
                     window.location.href = 'login.html';
+                    return;
                 }
+
+                const data = await response.json();
+                user = data.user;
             } catch (error) {
                 console.error('Error loading user session:', error);
                 window.location.href = 'login.html';
+                return;
+            }
+
+            const userName = user.fullName || user.username || 'Student';
+            const firstName = userName.split(' ')[0];
+            document.getElementById('welcomeMessage').innerHTML = `Welcome back, ${escapeHtml(userName)}! 👋`;
+            document.getElementById('userNameDisplay').innerHTML = `<i class="fas fa-user-circle"></i> ${escapeHtml(firstName)}`;
+            document.getElementById('avatarCircle').innerText = getInitials(userName);
+
+            try {
+                await loadHostels();
+            } catch (error) {
+                console.error('Error loading homepage hostels:', error);
             }
         }
 

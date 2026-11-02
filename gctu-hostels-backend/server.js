@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const hostelRoutes = require('./routes/hostelRoutes');
+const userDataRoutes = require('./routes/userDataRoutes');
 require('dotenv').config();
 
 const connectDB = require('./config/db');
@@ -121,17 +122,10 @@ app.use('/api/send-otp', authLimiter);
 app.use('/api/verify-otp', authLimiter);
 app.use('/api/reset-password', authLimiter);
 
-// Debug middleware - check if session is working
-app.use((req, res, next) => {
-    console.log('🔍 Session ID:', req.sessionID);
-    console.log('🔍 Session data:', req.session);
-    next();
-});
-
-
 // Routes
 app.use('/api', require('./routes/authRoutes'));
 app.use('/api/hostels', hostelRoutes);
+app.use('/api', userDataRoutes);
 
 //sitemap for gsc route
 app.use('/', sitemapRoute);

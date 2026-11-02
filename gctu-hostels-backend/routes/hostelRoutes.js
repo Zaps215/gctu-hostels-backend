@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Hostel = require('../models/Hostel');
 const isAuthenticated = require('../middleware/auth');
+const isManager = require('../middleware/managerAuth');
 
 // GET /api/hostels - Fetch all hostels with optional query filters
 router.get('/', async (req, res) => {
@@ -57,7 +58,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/hostels - Admin seeding or registration endpoint
-router.post('/', isAuthenticated, async (req, res) => {
+router.post('/', isAuthenticated, isManager, async (req, res) => {
   try {
     const hostel = await Hostel.create(req.body);
     res.status(201).json({ success: true, data: hostel });

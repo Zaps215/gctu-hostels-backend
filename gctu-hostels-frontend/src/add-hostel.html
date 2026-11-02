@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Hostel | GCTU StudentHostels Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fefcf5 0%, #f8f3e9 100%);
+            color: #1e2a2f;
+            min-height: 100vh;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 16px 32px;
+        }
+
+        body.dark-mode .navbar {
+            background: rgba(26, 26, 46, 0.96);
+        }
+
+        .navbar-inner {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo a {
+            font-size: 24px;
+            font-weight: 800;
+            text-decoration: none;
+            background: linear-gradient(135deg, #2b5f8a, #1f8a7c);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .logo span {
+            color: #f4a261;
+            font-size: 18px;
+        }
+
+        .btn-back {
+            text-decoration: none;
+            color: #2b5f8a;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 40px;
+            background: rgba(43, 95, 138, 0.1);
+            transition: 0.2s;
+        }
+
+        body.dark-mode .btn-back {
+            color: #f4a261;
+            background: rgba(244, 162, 97, 0.1);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        body.dark-mode .card {
+            background: #1e1e2e;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: #2b5f8a;
+        }
+
+        body.dark-mode h1 {
+            color: #f4a261;
+        }
+
+        .subtitle {
+            color: #6c7e82;
+            margin-bottom: 32px;
+            font-size: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid #e1dcd6;
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 15px;
+            background: #faf8f5;
+            color: inherit;
+            transition: 0.2s;
+        }
+
+        body.dark-mode input,
+        body.dark-mode textarea,
+        body.dark-mode select {
+            background: #2a2a3e;
+            border-color: #3f3f5f;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #2b5f8a;
+            background: #fff;
+        }
+
+        body.dark-mode input:focus {
+            background: #1e1e2e;
+            border-color: #f4a261;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #2b5f8a, #1f8a7c);
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            opacity: 0.95;
+            transform: translateY(-2px);
+        }
+
+        .alert {
+            padding: 14px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert-error {
+            background: rgba(231, 111, 81, 0.15);
+            color: #e76f51;
+        }
+
+        .alert-success {
+            background: rgba(31, 138, 124, 0.15);
+            color: #1f8a7c;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="navbar-inner">
+            <div class="logo">
+                <a href="homepage.html">GCTU<span>StudentHostels</span></a>
+            </div>
+            <div class="nav-actions">
+                <a href="homepage.html" class="btn-back">← Exit to Homepage</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h1>Publish New Hostel</h1>
+            <p class="subtitle">Fill out the property details below to list your hostel for GCTU students.</p>
+
+            <div id="formAlert" class="alert"></div>
+
+            <form id="addHostelForm">
+                <div class="form-group">
+                    <label for="name">Hostel Name *</label>
+                    <input type="text" id="name" required placeholder="e.g. Unidaz Annex Hostel">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="location">Location / Area *</label>
+                        <input type="text" id="location" required placeholder="e.g. Ofankor Barrier, Near Campus">
+                    </div>
+                    <div class="form-group">
+                        <label for="distanceFromCampus">Distance from Campus</label>
+                        <input type="text" id="distanceFromCampus" placeholder="e.g. 5 mins walk">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="price">Price (GHS) *</label>
+                        <input type="number" id="price" min="1" step="0.01" required placeholder="e.g. 3500">
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentTerm">Payment Term *</label>
+                        <select id="paymentTerm">
+                            <option value="per academic year">Per Academic Year</option>
+                            <option value="per semester">Per Semester</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="coverImage">Cover Image URL *</label>
+                        <input type="url" id="coverImage" required placeholder="https://example.com/image.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label for="contactPhone">Manager Phone Number *</label>
+                        <input type="tel" id="contactPhone" required placeholder="e.g. +233240000000">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="amenities">Amenities (Comma separated)</label>
+                    <input type="text" id="amenities" placeholder="Wi-Fi, Water Storage, Backup Generator, Security">
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Property Description *</label>
+                    <textarea id="description" rows="4" maxlength="2000" required placeholder="Describe room types, security features, water availability, etc."></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">Publish Hostel Listing</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        const AUTH_API_URL = API_CONFIG.AUTH_API;
+        const HOSTEL_API_URL = API_CONFIG.HOSTEL_API;
+
+        // 1. Verify Manager Authorization on Load
+        async function verifyManager() {
+            try {
+                const response = await fetch(`${AUTH_API_URL}/me`, { credentials: 'include' });
+                if (!response.ok) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                const data = await response.json();
+                const user = data.user || data;
+
+                if (user.role !== 'manager') {
+                    alert('Unauthorized: Only verified hostel managers can access this portal.');
+                    window.location.href = 'homepage.html';
+                }
+            } catch (error) {
+                console.error('Auth verification error:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        verifyManager();
+
+        // 2. Handle Form Submission
+        const form = document.getElementById('addHostelForm');
+        const alertBox = document.getElementById('formAlert');
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Publishing...';
+            alertBox.style.display = 'none';
+
+            // Gather form data
+            const hostelData = {
+                name: document.getElementById('name').value.trim(),
+                location: document.getElementById('location').value.trim(),
+                distanceFromCampus: document.getElementById('distanceFromCampus').value.trim(),
+                price: Number(document.getElementById('price').value),
+                paymentTerm: document.getElementById('paymentTerm').value,
+                coverImage: document.getElementById('coverImage').value.trim(),
+                contactPhone: document.getElementById('contactPhone').value.trim(),
+                amenities: document.getElementById('amenities').value.split(',').map(a => a.trim()).filter(Boolean),
+                description: document.getElementById('description').value.trim()
+            };
+
+            try {
+                const response = await fetch(HOSTEL_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(hostelData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    alertBox.className = 'alert alert-success';
+                    alertBox.textContent = 'Hostel successfully published! Redirecting to homepage...';
+                    alertBox.style.display = 'block';
+                    setTimeout(() => {
+                        window.location.href = 'homepage.html';
+                    }, 1500);
+                } else {
+                    throw new Error(result.error || result.message || 'Failed to publish hostel listing.');
+                }
+            } catch (error) {
+                console.error('Publish error:', error);
+                alertBox.className = 'alert alert-error';
+                alertBox.textContent = error.message || 'Error connecting to server. Please try again.';
+                alertBox.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Publish Hostel Listing';
+            }
+        };
+    </script>
+</body>
+</html>

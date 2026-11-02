@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hostel Details | GCTU StudentHostels</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -245,6 +245,7 @@
         <div style="text-align: center; padding: 60px;">Loading hostel details...</div>
     </div>
     <script src="config.js"></script>
+    <script src="utils/activityLogger.js"></script>
     <script>
         const HOSTEL_API_URL = API_CONFIG.HOSTEL_API;
 
@@ -259,7 +260,7 @@
                 container.innerHTML = `
                     <div style="text-align: center; padding: 60px;">
                         <h2>Hostel not found</h2>
-                        <p style="margin-top: 10px;"><a href="index.html" class="btn-back">Return to Listings</a></p>
+                        <p style="margin-top: 10px;"><a href="homepage.html" class="btn-back">Return to Listings</a></p>
                     </div>`;
                 return;
             }
@@ -283,7 +284,15 @@
             }
         }
 
-        function renderHostel(hostel) {
+        async function renderHostel(hostel) {
+            try {
+                await logUserActivity('viewed_hostel', { hostelId: hostel._id });
+            } catch (error) {
+                if (error.status !== 401) {
+                    console.error('Unable to record hostel view:', error);
+                }
+            }
+
             const container = document.getElementById('detailsContainer');
             
             const amenitiesList = hostel.amenities && hostel.amenities.length > 0 
@@ -292,6 +301,17 @@
 
             const phone = hostel.contactPhone || hostel.phone || hostel.managerPhone || '+233000000000';
             const cleanPhone = phone.replace(/[^0-9+]/g, '');
+
+            // Check if already bookmarked
+            let isBookmarked = false;
+            try {
+                const saved = await getSavedHostels();
+                isBookmarked = saved.some(savedHostel => savedHostel._id === hostel._id);
+            } catch (error) {
+                if (error.status !== 401) {
+                    console.error('Unable to load saved hostels:', error);
+                }
+            }
 
             container.innerHTML = `
                 <div class="details-grid">
@@ -302,7 +322,13 @@
                         </div>
 
                         <div class="card">
-                            <h1 class="hostel-title">${hostel.name}</h1>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <h1 class="hostel-title">${hostel.name}</h1>
+                                <button id="bookmarkBtn" data-hostel-id="${hostel._id}" aria-pressed="${isBookmarked}" aria-label="${isBookmarked ? 'Remove saved hostel' : 'Save hostel'}" onclick="handleBookmarkToggle(this)" style="background: none; border: none; font-size: 28px; cursor: pointer; color: ${isBookmarked ? '#e76f51' : '#ccc'};">
+                                    <i class="${isBookmarked ? 'fas' : 'far'} fa-heart"></i>
+                                </button>
+                            </div>
+
                             <div class="hostel-location">
                                 <i class="fas fa-map-marker-alt" style="color: #e76f51;"></i>
                                 <span>${hostel.location || 'Near GCTU Campus'}</span>
@@ -333,11 +359,11 @@
                                 Get in touch directly with the hostel manager for room availability and viewings.
                             </p>
 
-                            <a href="tel:${cleanPhone}" class="contact-btn btn-call">
+                            <a href="tel:${cleanPhone}" class="contact-btn btn-call" onclick="logUserActivity('opened_contact', { hostelId: '${hostel._id}' }).catch(error => console.error('Unable to record contact action:', error))">
                                 <i class="fas fa-phone-alt"></i> Call Manager (${phone})
                             </a>
 
-                            <a href="https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hello, I am interested in booking a room at ${hostel.name} via GCTU StudentHostels.`)}" target="_blank" class="contact-btn btn-whatsapp">
+                            <a href="https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Hello, I am interested in booking a room at ${hostel.name} via GCTU StudentHostels.`)}" target="_blank" rel="noopener noreferrer" class="contact-btn btn-whatsapp" onclick="logUserActivity('opened_contact', { hostelId: '${hostel._id}' }).catch(error => console.error('Unable to record contact action:', error))">
                                 <i class="fab fa-whatsapp"></i> Chat on WhatsApp
                             </a>
                         </div>
@@ -346,8 +372,34 @@
             `;
         }
 
+        // Bookmark toggle handler for the details page
+        async function handleBookmarkToggle(btn) {
+            const icon = btn.querySelector('i');
+            const shouldSave = btn.getAttribute('aria-pressed') !== 'true';
+            btn.disabled = true;
+
+            try {
+                const isNowBookmarked = await setHostelSaved(btn.dataset.hostelId, shouldSave);
+                icon.className = isNowBookmarked ? 'fas fa-heart' : 'far fa-heart';
+                btn.style.color = isNowBookmarked ? '#e76f51' : '#ccc';
+                btn.setAttribute('aria-pressed', String(isNowBookmarked));
+                btn.setAttribute('aria-label', isNowBookmarked ? 'Remove saved hostel' : 'Save hostel');
+            } catch (error) {
+                console.error('Unable to update saved hostel:', error);
+                if (error.status === 401) {
+                    alert('Please log in to save hostels.');
+                    window.location.href = 'login.html';
+                } else {
+                    alert(error.message || 'Unable to update saved hostel. Please try again.');
+                }
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
         // Fetch hostel details on load
         fetchHostelDetails();
+
     </script>
 </body>
 </html>
