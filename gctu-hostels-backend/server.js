@@ -8,6 +8,8 @@ const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const hostelRoutes = require('./routes/hostelRoutes');
 const userDataRoutes = require('./routes/userDataRoutes');
+const allowedOrigins = require('./config/allowedOrigins');
+const requireTrustedOrigin = require('./middleware/requireTrustedOrigin');
 require('dotenv').config();
 
 const connectDB = require('./config/db');
@@ -58,17 +60,9 @@ app.set('trust proxy', 1);
 
 // CORS
 app.use(cors({
-    origin: [
-        'http://localhost:3000', 
-        'http://127.0.0.1:3000',
-        'http://localhost:5500',
-         'http://127.0.0.1:5500', 
-        'http://localhost:5000',
-         'http://172.30.149.184:5500', 
-         'https://gctu-hostels-backend.onrender.com',
-    'https://student-hostels.netlify.app' ],
+    origin: allowedOrigins,
     credentials: true,
-     allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-admin-secret'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 }));
 
@@ -89,6 +83,8 @@ app.use(session({
         maxAge: 1000 * 60 * 60 * 24
     }
 }));
+
+app.use('/api', requireTrustedOrigin);
 
 // ==========================================
 // RATE LIMITING
@@ -120,6 +116,8 @@ app.use('/api/login', authLimiter);
 app.use('/api/signup', authLimiter);
 app.use('/api/send-otp', authLimiter);
 app.use('/api/verify-otp', authLimiter);
+app.use('/api/forgot-password', authLimiter);
+app.use('/api/verify-reset-otp', authLimiter);
 app.use('/api/reset-password', authLimiter);
 
 // Routes

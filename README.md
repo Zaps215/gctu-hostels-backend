@@ -85,6 +85,7 @@ NODE_ENV=development
 MONGO_URI=mongodb://127.0.0.1:27017/gctu-hostels
 SESSION_SECRET=replace-with-a-long-random-secret
 BREVO_API_KEY=your-brevo-api-key
+ADMIN_SECRET=replace-with-a-long-random-secret
 ```
 
 For MongoDB Atlas, use your Atlas connection URI as `MONGO_URI`. Do not commit `.env` or paste real credentials into issues, pull requests, or documentation.
@@ -112,7 +113,7 @@ cd gctu-hostels-backend
 node seedHostels.js
 ```
 
-**Warning:** the current seed script deletes all existing hostel records before inserting its sample listings. Only run it against a disposable development database unless you intentionally want to replace the entire hostel collection.
+The seed script adds only missing sample listings and leaves existing listings unchanged.
 
 ## API overview
 
@@ -127,10 +128,22 @@ All API routes are hosted under `/api`. Routes marked **Session required** expec
 | `POST` | `/api/signup` | Disabled | Returns `403`; registration must use OTP |
 | `POST` | `/api/login` | Public | Start an authenticated session |
 | `POST` | `/api/logout` | Public | End the current session |
+| `POST` | `/api/register-manager` | Admin secret required | Create a verified manager account |
 | `GET` | `/api/me` | Session required | Return the current user |
 | `POST` | `/api/forgot-password` | Public | Request a password-reset code |
 | `POST` | `/api/verify-reset-otp` | Public | Verify the password-reset code |
 | `POST` | `/api/reset-password` | Verified reset session | Set a new password |
+
+Provision manager accounts from a trusted environment, not from frontend code. Set `ADMIN_SECRET` in the backend environment, then send it in the `x-admin-secret` header:
+
+```bash
+curl -X POST "$API_URL/api/register-manager" \
+  -H "Content-Type: application/json" \
+  -H "x-admin-secret: $ADMIN_SECRET" \
+  -d '{"fullName":"Manager Name","username":"manager-login","email":"manager@example.com","password":"Use-a-strong-password1!"}'
+```
+
+Keep the secret out of source control, browser code, and client-side requests.
 
 ### Hostels
 
@@ -163,7 +176,7 @@ Session-protected requests from the frontend must include credentials (cookies);
 
 - Hostel browsing, favorites, and activity use MongoDB-backed API data.
 - Bookings and payment processing are **not implemented**; contact actions do not create bookings.
-- Hostel creation currently requires a logged-in session, but there is not yet a role-based admin authorization system.
+- Hostel creation requires a logged-in manager session. Manager accounts are provisioned through the admin-secret-protected endpoint above.
 - Search and discovery filters on the pages are applied client-side to the fetched hostel list.
 - No automated test suite is configured yet. Syntax checks and manual API smoke tests are not a substitute for regression or integration tests.
 

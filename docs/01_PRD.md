@@ -1,9 +1,9 @@
 # PRD - Product Requirements Document
 
 **Project:** GCTU StudentHostels
-**Version:** 1.1
-**Date:** October 2026
-**Status:** Active Development
+**Version:** 1.2
+**Date:** November 2026
+**Status:** Active Development — source-state snapshot
 **Author:** Development Team
 **Target Audience:** Board of Members, Stakeholders, Developers
 
@@ -12,6 +12,8 @@
 ## 1. Executive Summary
 
 GCTU StudentHostels is a **central hub for all hostel platforms** designed specifically for students of Ghana Communication Technology University (GCTU). The platform acts as a unified directory that aggregates all hostel listings around the GCTU Tesano campus into one place, bridging the gap between students searching for accommodation and hostel managers looking to promote their properties. By serving as the central discovery point, students can easily find, compare, and connect with any hostel near campus through a single platform.
+
+**Implementation note:** This document describes the current local source state. Recent security, UI, and documentation changes have not been verified against the deployed services.
 
 ## 2. Problem Statement
 
@@ -49,24 +51,24 @@ Create a centralized digital platform where all GCTU-approved hostels can be lis
 
 ### 5.1 Public Features (Unauthenticated)
 - **Landing Page**: Hero section with search functionality and platform overview
-- **Hostel Browsing**: Grid view of all available hostels with key information
-- **Advanced Search & Filters**: Filter by price range, distance from campus, availability, amenities
-- **Hostel Details**: Comprehensive view with images, pricing, amenities, location, contact info
+- **Hostel Browsing**: Grid of database-backed listings, with details pages
+- **Search & Filters**: Client-side search by name/location and filters for availability, budget, walking distance, price bands, and amenities
+- **Hostel Details**: Description, price, location, amenities, validated image, save action, and manager phone/WhatsApp contacts when supplied
+- **Contact Us**: Netlify Forms submission from the landing page
 - **Responsive Design**: Mobile-friendly interface for on-the-go access
 
 ### 5.2 Student Features (Authenticated)
 - **User Account**: Registration with email OTP verification, secure login/logout
-- **Personal Dashboard**: Overview of favorites, bookings, activity, and profile
-- **Favorites/Wishlist**: Save hostels for later comparison
-- **Booking Requests**: Express interest in hostels (referral model)
+- **Personal Dashboard**: Saved-hostel count, unique hostels explored, search count, saved listings, profile summary, and recent activity
+- **Favorites/Wishlist**: Save/remove hostels; records are stored per account
+- **Activity Tracking**: Record login, unique hostel views, searches, and contact actions
 - **Password Management**: Forgot password with OTP-based reset
-- **Profile Management**: Update personal information
+- **Profile Display**: Show the verified account name, email, and index number; profile editing is not implemented
 
-### 5.3 Admin Features (Planned)
-- **Hostel Management**: CRUD operations for hostel listings
-- **User Management**: View and manage user accounts
-- **Content Moderation**: Approve/reject listings
-- **Analytics Dashboard**: Platform usage insights
+### 5.3 Manager and Administrator Features
+- **Manager Listing Creation**: A provisioned manager can publish a hostel listing from the manager portal. Listing edit/delete and moderation are not implemented.
+- **Manager Provisioning**: An administrator creates manager accounts through the `POST /api/register-manager` endpoint using the server-side `ADMIN_SECRET`; there is no public manager registration or admin UI.
+- **Administration UI, User Management, Moderation, and Admin Analytics**: Not implemented.
 
 ## 6. User Stories
 
@@ -75,9 +77,9 @@ Create a centralized digital platform where all GCTU-approved hostels can be lis
 | US-001 | As a student, I want to browse hostels without creating an account so I can explore options | P0 | Done |
 | US-002 | As a student, I want to register with email verification so my account is secure | P0 | Done |
 | US-003 | As a student, I want to search and filter hostels so I can find suitable options within budget | P0 | Done |
-| US-004 | As a student, I want to save favorite hostels so I can compare them later | P0 | In Progress |
-| US-005 | As a student, I want to request booking for a hostel so I can express interest | P0 | In Progress |
-| US-006 | As an admin, I want to add/edit hostel listings so I can keep information current | P0 | Planned |
+| US-004 | As a student, I want to save favorite hostels so I can compare them later | P0 | Implemented |
+| US-005 | As a student, I want to request booking for a hostel so I can express interest | P0 | Not implemented |
+| US-006 | As a manager, I want to publish a hostel listing so students can find it | P0 | Create only; edit/delete not implemented |
 | US-007 | As a student, I want to reset my password if forgotten so I can regain access | P0 | Done |
 
 ## 7. Success Metrics
@@ -106,21 +108,23 @@ Create a centralized digital platform where all GCTU-approved hostels can be lis
 
 ## 9. Out of Scope (Current Release)
 - In-app payment processing
+- In-app booking requests, reservation status, and booking history
 - Real-time chat between students and managers
 - Room availability calendar
 - Mobile native applications
 - Multi-campus support
-- Review/rating system (UI exists but not connected)
+- User-submitted review/rating system (landing page testimonials are static sample content)
 
 ## 10. Release Criteria
-- [x] User authentication (register, login, logout, password reset) fully functional
-- [x] Public hostel browsing with search and filters
-- [x] Responsive design across devices
-- [x] Production deployment operational
-- [ ] Hostel data migrated from hardcoded to database
-- [ ] Dashboard showing real user data (favorites, bookings)
-- [ ] Admin functionality for hostel management
-- [ ] Security vulnerabilities addressed per project plan
+- [x] Student email-OTP registration, login, logout, and OTP-backed password reset are implemented in source
+- [x] Public hostel browsing, details, and client-side search/filter UI use the hostel API
+- [x] Favorites and dashboard activity/statistics use authenticated API routes
+- [x] Manager-only hostel listing creation is implemented; manager accounts are provisioned by admin secret
+- [ ] Full booking-request and payment workflows
+- [ ] Hostel listing edit/delete, admin UI, moderation, and user-management UI
+- [ ] OTP hashing and per-code verification attempt limits
+- [ ] Automated test suite and CI
+- [ ] Verify current changes and end-to-end flows against production
 
 ## 11. Approval
 This PRD serves as the foundation for all subsequent technical documentation and development activities.

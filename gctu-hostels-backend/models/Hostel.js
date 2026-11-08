@@ -37,6 +37,7 @@ const hostelSchema = new mongoose.Schema({
     type: Number, 
     required: true 
   },
+  description: { type: String, default: '' },
   paymentTerm: {
     type: String,
     required: true,

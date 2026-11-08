@@ -1,16 +1,18 @@
 # UI PLAN Document
 
 **Project:** GCTU StudentHostels
-**Version:** 1.0
-**Date:** October 2026
-**Status:** In Progress
+**Version:** 1.1
+**Date:** November 2026
+**Status:** Active Development — source-state snapshot
 **Related:** PRD v1.0, User Flow v1.0
 
 ---
 
 ## 1. Overview
 
-This document outlines the User Interface design strategy, components, layouts, and design system for the GCTU StudentHostels platform - the central hub for all hostel platforms. The design follows a clean, student-friendly approach with focus on usability and mobile responsiveness to help students discover all hostels in one place.
+This document outlines the User Interface design strategy, components, layouts, and design system for GCTU StudentHostels, a student-facing hostel discovery platform.
+
+**Implementation note:** This records the UI as currently implemented in source. It is not a claim that every accessibility or production check has passed.
 
 ## 2. Design Goals
 - **Simplicity**: Clean interface that's easy to navigate for students
@@ -26,28 +28,22 @@ This document outlines the User Interface design strategy, components, layouts, 
 
 | Color | Hex Code | Usage | Purpose |
 |---|---|---|---|
-| **Primary** | `#0066cc` / `#007bff` | Buttons, links, CTAs | Brand primary action color |
-| **Primary Dark** | `#0056b3` | Hover states | Interactive element hover |
-| **Secondary** | `#6c757d` | Secondary buttons | Less prominent actions |
-| **Success** | `#28a745` | Success messages, confirmations | Positive feedback |
-| **Danger** | `#dc3545` | Errors, logout, warnings | Error states |
-| **Warning** | `#ffc107` | Warnings, alerts | Caution states |
-| **Info** | `#17a2b8` | Information messages | Informational feedback |
-| **Background** | `#f8f9fa` / `#ffffff` | Page backgrounds | Main background |
-| **Text Primary** | `#333333` / `#212529` | Body text | Main content |
-| **Text Secondary** | `#6c757d` | Labels, meta info | Secondary content |
-| **Border** | `#dee2e6` / `#e0e0e0` | Cards, inputs | Element borders |
+| **Primary blue** | `#2b5f8a` | Navigation, headings, primary actions |
+| **Teal** | `#1f8a7c` | Secondary actions, success accents |
+| **Warm accent** | `#f4a261` | Highlights, icons, calls to action |
+| **Coral** | `#e76f51` | Price and logout/emphasis accents |
+| **Background** | `#fefcf5` / `#f8f3e9` | Warm page backgrounds |
+| **Surface** | `#ffffff` | Cards and form surfaces |
+| **Body text** | `#1e2a2f` | Primary text |
+| **Muted text** | `#6c7e82` | Labels and secondary content |
 
 ### 3.2 Typography
 
 | Element | Font Family | Weight | Size (Desktop) | Size (Mobile) | Usage |
 |---|---|---|---|---|---|
-| **Headings H1** | System/Arial/Sans-serif | 700 (Bold) | 2.5rem - 3rem | 2rem - 2.5rem | Page titles |
-| **Headings H2** | System/Arial/Sans-serif | 600-700 | 2rem - 2.5rem | 1.75rem - 2rem | Section titles |
-| **Headings H3** | System/Arial/Sans-serif | 600 | 1.5rem - 1.75rem | 1.25rem - 1.5rem | Card titles |
-| **Body Text** | System/Arial/Sans-serif | 400 (Regular) | 1rem | 0.9rem - 1rem | Main content |
-| **Small Text** | System/Arial/Sans-serif | 400 | 0.875rem | 0.8rem | Labels, captions |
-| **Button Text** | System/Arial/Sans-serif | 600 | 0.9rem - 1rem | 0.875rem - 0.9rem | CTAs |
+| **Headings** | Inter, sans-serif | 600–800 | Page/section-specific | Responsive | Page titles and sections |
+| **Body Text** | Inter, sans-serif | 400–500 | Usually 1rem | Responsive | Main content |
+| **Button Text** | Inter, sans-serif | 600–700 | Component-specific | Responsive | Actions |
 
 ### 3.3 Spacing System
 Using rem-based spacing for consistency:
@@ -80,50 +76,39 @@ Using rem-based spacing for consistency:
 **Purpose:** Main navigation for guest users
 **Elements:**
 - Logo/Brand name "GCTU StudentHostels"
-- Navigation links (Home, Hostels, Contact)
-- Sign Up / Login buttons
-- Mobile hamburger menu (responsive)
+- Anchor navigation (Home, Search, Hostels, Reviews)
+- Student and manager portal actions
+- Contact section and footer links lower on page
 
 **Structure:**
 ```html
-<nav class="navbar">
-  <div class="nav-brand">GCTU StudentHostels</div>
-  <ul class="nav-menu">
-    <li><a href="#home">Home</a></li>
-    <li><a href="#hostels">Hostels</a></tag></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="signup.html" class="btn btn-primary">Sign Up</a></li>
-    <li><a href="login.html" class="btn btn-outline">Login</a></li>
-  </ul>
-</nav>
+The implemented landing navbar uses the corresponding section anchors and portal buttons. Authenticated session state replaces those buttons with user details, a destination appropriate to the user's role, and logout.
 ```
 
 #### Header/Navbar (Authenticated)
-**Purpose:** Navigation for logged-in students
+**Purpose:** Navigation for logged-in users
 **Elements:**
 - Logo
 - Navigation links (Home, Dashboard, Hostels)
-- User avatar with initials
-- Logout button/modal trigger
+- Dashboard or manager listing destination
+- Logout action
 - Responsive menu
 
 ### 4.2 Button Components
 
 | Type | Style | Usage |
 |---|---|---|
-| **Primary** | `background: #007bff; color: white;` | Main actions (Sign Up, Login, Submit) |
-| **Secondary** | `background: #6c757d; color: white;` | Secondary actions |
-| **Outline** | `background: transparent; border: 2px solid #007bff; color: #007bff;` | Alternative actions |
-| **Danger** | `background: #dc3545; color: white;` | Delete, Logout confirmation |
-| **Success** | `background: #28a745; color: white;` | Confirmations |
-| **Link** | `background: transparent; color: #007bff; text-decoration: underline;` | Text links |
+| **Primary** | Blue/teal gradients or page-specific solid colors | Main actions |
+| **Secondary/Outline** | Transparent or muted backgrounds with blue/teal borders | Alternative actions |
+| **Danger** | Coral accent | Logout confirmation and error states |
+| **Link** | Blue/teal text | Navigation and detail links |
 
 ### 4.3 Form Components
 
 #### Input Fields
 - **Text Input**: Standard text entry with label
 - **Email Input**: Email validation
-- **Password Input**: With show/hide toggle (planned)
+- **Password Input**: With show/hide toggle
 - **Select Dropdown**: For filters
 - **Textarea**: For messages
 
@@ -144,8 +129,9 @@ Using rem-based spacing for consistency:
 - Price (e.g., "GHS 2000 - GHS 2500")
 - Amenities badges (WiFi, Water, Security)
 - Availability status
-- "View Details" / "Book Now" button
-- Favorite heart icon (planned)
+- "View Details & Contact" link; booking is not implemented
+- Favorite heart action is on the details page
+- Availability/amenity details as supplied by the listing
 
 **Layout:**
 ```
@@ -157,17 +143,13 @@ Using rem-based spacing for consistency:
 │ 💰 Price                │
 │ 🏷️ Amenities            │
 │ ✅ Availability         │
-│ [View Details Button]   │
+│ [View Details & Contact]│
 └─────────────────────────┘
 ```
 
 #### Stats Card (Dashboard)
 **Purpose:** Display user statistics
-**Elements:**
-- Icon
-- Value (number)
-- Label
-- Optional trend indicator
+Implemented dashboard metrics: saved hostels, unique hostels explored, and searches made, plus account status.
 
 ### 4.5 Modal Components
 
@@ -175,8 +157,8 @@ Using rem-based spacing for consistency:
 **Purpose:** Email verification during signup
 **Elements:**
 - Title "Verify Your Email"
-- Masked email display
-- 6-digit OTP input fields
+- Email display
+- 6-digit OTP input
 - Countdown timer (10 minutes)
 - Resend button
 - Verify and Cancel buttons
@@ -224,10 +206,10 @@ Using rem-based spacing for consistency:
 **Key Sections:**
 1. **Hero**: "Find Your Perfect Hostel Near GCTU" with search CTA
 2. **Stats**: Display platform metrics
-3. **Filters**: Budget, availability, distance filters
+3. **Filters**: Search, price range, and amenity filters
 4. **Hostel Grid**: Responsive grid (3 columns desktop, 2 tablet, 1 mobile)
-5. **Testimonials**: Student reviews
-6. **Contact**: Netlify Forms integration
+5. **Testimonials**: Landing-page testimonials
+6. **Contact**: Labeled contact form using Netlify Forms and `thankyou.html`
 7. **Footer**: Links, copyright
 
 ### 5.2 Login Page (login.html)
@@ -237,11 +219,11 @@ Using rem-based spacing for consistency:
 │                Centered Card             │
 │  ┌─────────────────────────────────┐   │
 │  │          Login Form              │   │
-│  │  - Username/Email input          │   │
+│  │  - Student index / hostel name   │   │
 │  │  - Password input                │   │
 │  │  - Forgot Password link          │   │
 │  │  - Login Button                  │   │
-│  │  - Sign Up link                  │   │
+│  │  - Student registration link     │   │
 │  └─────────────────────────────────┘   │
 └─────────────────────────────────────────┘
 ```
@@ -254,10 +236,10 @@ Using rem-based spacing for consistency:
 │  ┌─────────────────────────────────┐   │
 │  │        Registration Form         │   │
 │  │  - Full Name                     │   │
-│  │  - Username                      │   │
+│  │  - GCTU Index Number             │   │
 │  │  - Email                         │   │
 │  │  - Password                      │   │
-│  │  - Password Strength Indicator   │   │
+│  │  - Password requirements         │   │
 │  │  - Sign Up Button                │   │
 │  │  - Login link                    │   │
 │  └─────────────────────────────────┘   │
@@ -265,25 +247,24 @@ Using rem-based spacing for consistency:
 └── OTP Modal (overlay) ──┘
 ```
 
+Student registration is available through email OTP. A manager query parameter displays an administrator-provisioning message and manager sign-in link; it does not create a manager account.
+
 ### 5.4 Student Homepage (homepage.html)
 **Layout:**
 ```
 ┌─────────────────────────────────────────┐
 │              Navigation Bar              │
 ├─────────────────────────────────────────┤
-│              Welcome Banner              │
-│        "Welcome back, [User Name]!"      │
+│        Welcome + student identity         │
 ├─────────────────────────────────────────┤
-│             Recommended Hostels          │
-│              (Card Grid)                 │
+│        Search, filters, amenity chips     │
 ├─────────────────────────────────────────┤
-│              Recent Activity             │
-│                (List View)               │
-├─────────────────────────────────────────┤
-│                Quick Actions             │
+│      API-backed hostel details cards      │
 └─────────────────────────────────────────┘
 └── Logout Confirmation Modal ──┘
 ```
+
+Recent activity is shown on the dashboard rather than the homepage.
 
 ### 5.5 Student Dashboard (dashboard.html)
 **Layout:**
@@ -295,19 +276,29 @@ Using rem-based spacing for consistency:
 │           Avatar + User Info             │
 ├─────────────────────────────────────────┤
 │                Stats Cards               │
-│        (Bookings, Saved, Spent)          │
+│ (Saved, Explored, Searches, Account)      │
 ├─────────────────────────────────────────┤
 │ ┌─────────────┬─────────────────────┐   │
-│ │   Bookings   │      Saved Hostels   │   │
-│ │   Section    │        Section       │   │
-│ ├─────────────┼─────────────────────┤   │
-│ │   History    │      Profile         │   │
-│ │   Section    │        Summary       │   │
+│ │ Saved Hostels│   Verified Profile   │   │
+│ │   Section    │ Name/Email/Index No. │   │
 │ └─────────────┴─────────────────────┘   │
 ├─────────────────────────────────────────┤
 │              Recent Activity             │
 └─────────────────────────────────────────┘
 ```
+
+The dashboard does not display bookings, booking history, spending, or profile-edit controls.
+
+### 5.6 Hostel Details (hostel-details.html)
+- Listing image, name, location/distance, price/payment term, description, and amenities
+- Save/remove favorite button for authenticated students
+- Phone and WhatsApp actions only when a contact phone is present
+- Missing manager contact is shown as unavailable; no placeholder phone number is dialed
+
+### 5.7 Manager Listing Creation (add-hostel.html)
+- Manager-only form for creating a hostel listing
+- Session/role check before use; API also enforces manager role
+- Editing/deleting existing listings is not provided
 
 ## 6. Responsive Design
 
@@ -339,38 +330,32 @@ Using rem-based spacing for consistency:
 | **Modals** | Fade in/out | 0.3s ease | Smooth appearance |
 | **Spinners** | Rotation | 1s linear infinite | Loading indicator |
 
-### 7.2 Micro-interactions
-- **Heart/Favorite**: Scale animation on click (planned)
-- **Form Validation**: Shake animation on error (planned)
-- **Success Popup**: Fade in/out animation
-- **OTP Timer**: Countdown animation
-- **Loading States**: Button disabled with spinner
+### 7.2 Current Interactions
+- **Favorites**: Save/remove actions are available from the details page.
+- **Form Validation**: Forms use required fields and client-side checks where implemented.
+- **Authentication Feedback**: Login and signup provide status/error feedback.
+- **OTP Timer**: Signup verification displays a countdown and resend action.
+- **Loading Feedback**: Async form actions expose loading state where implemented.
 
 ## 8. UI States
 
 ### 8.1 Loading States
-- **Page Load**: Skeleton screens or spinners
-- **Button Loading**: Disabled button with spinner and text
-- **Form Submission**: Loading overlay
-- **Data Fetch**: Spinner in cards/grid area
+- Loading and disabled-button feedback varies by page and operation.
+- A consistent skeleton-loading pattern is not implemented.
 
 ### 8.2 Empty States
-- **No Hostels Found**: Illustration + message "No hostels found matching your filters"
-- **No Favorites**: Message "You haven't saved any hostels yet"
-- **No Bookings**: Message "No booking requests yet"
-- **Search Results Empty**: Suggest adjusting filters
+- **No Hostels Found**: Search/filter no-results feedback is shown.
+- **No Favorites**: The dashboard explains that no hostels have been saved and points students back to discovery.
 
-### 8.2 Error States
+### 8.3 Error States
 - **Form Errors**: Red text below inputs
-- **API Errors**: Toast/alert messages
-- **Network Error**: Retry button
-- **404 Page**: Not found message (planned)
+- **API Errors**: Inline messages or alerts depending on the page
+- **Network/API failures**: User feedback is present but not a uniform retry experience
 
 ### 8.4 Success States
 - **Registration Success**: Modal/alert with confirmation
-- **Login Success**: Popup animation
+- **Login Success**: Confirmation popup before redirect
 - **Password Reset Success**: Confirmation message
-- **Booking Request Success**: Confirmation popup (planned)
 
 ## 9. Iconography
 - **Library**: Font Awesome (mentioned in PROJECT_PLAN)
@@ -385,7 +370,8 @@ Using rem-based spacing for consistency:
 - **Alt Text**: Always provide descriptive alt text
 - **Aspect Ratio**: 16:9 or 4:3 for hostel cards
 
-## 11. Accessibility Checklist
+## 11. Accessibility Verification Checklist
+This is a checklist for future/manual verification, not a claim that every item has passed.
 - [ ] Semantic HTML elements used
 - [ ] Proper heading hierarchy (H1-H6)
 - [ ] Form labels associated with inputs
@@ -399,26 +385,22 @@ Using rem-based spacing for consistency:
 
 ## 12. UI Development Priorities
 
-### Immediate (MVP Critical)
-1. **Hostel Card Redesign**: Ensure consistent card layout
-2. **Dashboard Data Integration**: Replace mock with real data UI
-3. **Favorites UI**: Add heart icons and favorite functionality
-4. **Booking UI**: Add booking buttons and modals
-5. **Loading States**: Add spinners for all async operations
+### Immediate
+1. **Accessibility review**: Verify labels, keyboard behavior, focus visibility, and contrast across pages.
+2. **Responsive verification**: Test discovery, details, dashboard, and manager listing forms on mobile and desktop.
+3. **Error/loading consistency**: Improve recovery and feedback for failed API requests.
+4. **Security-flow verification**: Test authentication and role-specific views against the deployed configuration.
 
-### Short-term (Post-MVP Polish)
-1. **Dark Mode**: Complete dashboard dark mode implementation
-2. **Mobile Menu**: Improve hamburger menu functionality
-3 **Image Optimization**: Better placeholder handling
-4. **Toast Notifications**: Replace alerts with toast messages
-5. **Skeleton Loaders**: Add skeleton screens
+### Short-term
+1. **Manager listing management**: Add edit/remove actions with backend ownership enforcement.
+2. **Booking/viewing requests**: Design the workflow before adding booking controls.
+3. **Notifications**: Consider consistent toast feedback and skeleton loading after current journeys are verified.
+4. **Image handling**: Improve fallback and optimization behavior.
 
 ### Long-term
-1. **Admin Dashboard UI**: Design admin interface
-2. **Hostel Detail Page**: Dedicated detail view page
-3. **Advanced Filters**: More filter options UI
-4. **Reviews UI**: Connect review system
-5. **Payment UI**: Design payment flow
+1. **Reviews**: Define moderation and abuse handling before designing a review flow.
+2. **Advanced filters**: Prioritize based on student feedback.
+3. **Payments**: No payment flow is currently implemented or committed to scope.
 
 ## 13. Design Tools & Assets
 - **Design Approach**: Direct HTML/CSS/JS implementation

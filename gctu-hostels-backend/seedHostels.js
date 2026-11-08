@@ -58,13 +58,14 @@ const seedDB = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log('📦 Connected to MongoDB for seeding...');
 
-    // Clear existing hostel records to prevent duplicates during testing
-    await Hostel.deleteMany({});
-    console.log('🧹 Cleared existing hostel records.');
-
-    // Insert fresh baseline data
-    await Hostel.insertMany(sampleHostels);
-    console.log('🚀 Successfully seeded GCTU baseline hostels!');
+    const result = await Hostel.bulkWrite(sampleHostels.map(hostel => ({
+      updateOne: {
+        filter: { name: hostel.name, university: hostel.university },
+        update: { $setOnInsert: hostel },
+        upsert: true
+      }
+    })));
+    console.log(`✅ Seed complete: added ${result.upsertedCount} hostel(s); existing listings were left unchanged.`);
 
     process.exit(0);
   } catch (err) {

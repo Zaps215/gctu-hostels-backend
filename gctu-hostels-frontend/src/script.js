@@ -1,8 +1,50 @@
 const SignupForm = document.getElementById('signupForm');
 const errorDisplay = document.getElementById('error-message');
+const selectedRole = new URLSearchParams(window.location.search).get('role') === 'manager'
+    ? 'manager'
+    : 'student';
 // OTP Modal variables
 let otpTimerInterval = null;
 let otpTimeLeft = 600; // 10 minutes in seconds
+
+// 1. Role Parameter Detection & Dynamic UI updates on Page Load
+document.addEventListener('DOMContentLoaded', () => {
+    const header = document.getElementById('header');
+    const subHeader = document.querySelector('.underHeader');
+    const usernameInput = document.getElementById('Username');
+    const loginLink = document.getElementById('showLoginFromLoginBtn');
+
+    if (selectedRole === 'manager') {
+        if (header) header.textContent = 'Manager Registration';
+        if (subHeader) subHeader.textContent = 'Manager accounts are created by an administrator. Contact support to request access.';
+        if (usernameInput) usernameInput.placeholder = 'Hostel Name (e.g. Unidaz)';
+
+        if (SignupForm) {
+            SignupForm.innerHTML = `
+                <div style="text-align: center; padding: 20px 10px;">
+                    <i class="fas fa-building-user fa-3x" style="color: #3498db; margin-bottom: 15px;"></i>
+                    <p style="color: #444; font-size: 15px; line-height: 1.6;">
+                        Hostel manager accounts are provisioned directly by GCTU Hostels Administration. Please contact support or sign in if you already have your credentials.
+                    </p>
+                    <div style="margin-top: 25px;">
+                        <a href="login.html?role=manager" class="btn-primary" style="display: block; width: 100%; text-decoration: none; padding: 12px 0; background: #3498db; color: white; border-radius: 6px; text-align: center;">
+                            Go to Manager Sign In
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+    } else {
+        if (header) header.textContent = 'Student Registration';
+        if (subHeader) subHeader.textContent = 'Create your student account';
+        if (usernameInput) usernameInput.placeholder = 'Index Number';
+    }
+
+    if (loginLink) {
+        loginLink.href = `login.html?role=${selectedRole}`;
+    }
+});
 
 // Toggle password visibility
 function setupToggles() {
@@ -75,7 +117,8 @@ function updateOtpTimerDisplay() {
     const minutes = Math.floor(otpTimeLeft / 60);
     const seconds = otpTimeLeft % 60;
     const display = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    document.getElementById('otpTimerDisplay').innerHTML = `Time remaining: ${display}`;
+    const timerDisplay = document.getElementById('otpTimerDisplay');
+    if (timerDisplay) timerDisplay.innerHTML = `Time remaining: ${display}`;
 }
 
 function startOtpTimer() {
@@ -154,7 +197,7 @@ async function verifyOtp() {
         if (response.ok) {
             alert('Account created successfully! Please login.');
             hideOtpModal();
-            window.location.href = 'login.html';
+            window.location.href = `login.html?role=${selectedRole}`;
         } else {
             alert(data.error || 'Verification failed');
             verifyBtn.disabled = false;
@@ -189,7 +232,13 @@ async function resendOtp() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ fullName, username, email, password })
+            body: JSON.stringify({
+                fullName,
+                 username,
+                  email,
+                   password,
+                    role: 'student'
+                })
         });
         
         const data = await response.json();
@@ -249,7 +298,7 @@ const submitBtn = document.getElementById('signupBtn');
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ fullName, username, email, password })
+            body: JSON.stringify({ fullName, username, email, password, role: 'student' })
         });
 
         const data = await response.json();

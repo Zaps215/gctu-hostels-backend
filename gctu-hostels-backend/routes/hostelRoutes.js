@@ -58,8 +58,47 @@ router.get('/:id', async (req, res) => {
 
 // POST /api/hostels - Admin seeding or registration endpoint
 router.post('/', isAuthenticated, async (req, res) => {
+  if (req.session.userRole !== 'manager') {
+    return res.status(403).json({ success: false, error: 'Only hostel managers can publish listings.' });
+  }
+
   try {
-    const hostel = await Hostel.create(req.body);
+    const {
+      name,
+      university,
+      ownershipType,
+      genderCategory,
+      location,
+      distanceFromCampus,
+      price,
+      description,
+      paymentTerm,
+      roomTypesAvailable,
+      coverImage,
+      amenities,
+      isAvailable,
+      contactPhone,
+      officialUrl
+    } = req.body;
+
+    const hostel = await Hostel.create({
+      name,
+      university,
+      ownershipType,
+      genderCategory,
+      location,
+      distanceFromCampus,
+      price,
+      description,
+      paymentTerm,
+      roomTypesAvailable,
+      coverImage,
+      amenities,
+      isAvailable,
+      contactPhone,
+      officialUrl,
+      owner: req.session.userId
+    });
     res.status(201).json({ success: true, data: hostel });
   } catch (error) {
     console.error('Error creating hostel:', error);

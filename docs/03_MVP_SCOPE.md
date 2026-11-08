@@ -1,9 +1,9 @@
 # MVP Scope Document
 
 **Project:** GCTU StudentHostels
-**Version:** 1.0
-**Date:** October 2026
-**Status:** In Progress
+**Version:** 1.1
+**Date:** November 2026
+**Status:** Active Development — source-state snapshot
 **Related:** PRD v1.0, TRD v1.0
 
 ---
@@ -11,6 +11,8 @@
 ## 1. MVP Definition
 
 The Minimum Viable Product (MVP) for GCTU StudentHostels is a **central hub for all hostel platforms** that aggregates and centralizes hostel listings around the GCTU Tesano campus. It allows GCTU students to find and compare all available hostels in one place, with secure user accounts and direct connections to hostel management. The MVP focuses on solving the core problem of fragmented hostel information across multiple platforms while establishing a solid, secure foundation for future enhancements.
+
+**Implementation note:** Statuses describe the current local source state. Current local changes have not been verified against the deployed services.
 
 ## 2. MVP Goals
 1. Provide a functional platform where students can discover all GCTU-area hostels in one place
@@ -24,13 +26,14 @@ The Minimum Viable Product (MVP) for GCTU StudentHostels is a **central hub for 
 ### 3.1 In Scope - Core Features
 
 #### User Authentication & Management
-- [x] **User Registration**: Email, username, full name, password with validation
+- [x] **Student Registration**: Index number, name, email, password; manager public signup is blocked
 - [x] **Email Verification**: OTP-based verification via Brevo
 - [x] **User Login**: Username/password with session management
 - [x] **User Logout**: Session destruction
 - [x] **Password Reset**: Forgot password flow with OTP verification
 - [x] **Current User API**: Get authenticated user details
-- [x] **Session Persistence**: Secure cookie-based sessions
+- [x] **Session Persistence**: MongoDB-backed session cookies (`httpOnly`, secure in production, `sameSite: none` in production)
+- [x] **Manager Provisioning**: Admin-secret-protected endpoint; no self-service manager registration
 
 #### Public Hostel Discovery
 - [x] **Landing Page**: Marketing page with platform overview
@@ -39,12 +42,14 @@ The Minimum Viable Product (MVP) for GCTU StudentHostels is a **central hub for 
 - [x] **Filters**: Filter by availability, budget range, distance
 - [x] **Hostel Cards**: Show key info (name, price, location, amenities)
 - [x] **External Links**: Direct links to official hostel websites
+- [x] **Hostel Details**: Database-backed detail page, escaped listing content, validated image URLs, and optional phone/WhatsApp contacts
+- [x] **Landing Contact Form**: Netlify Forms form and thank-you page (delivery depends on deployed Netlify configuration)
 
 #### Authenticated Student Experience
-- [x] **Student Homepage**: Personalized welcome with recommendations
-- [x] **Student Dashboard**: Overview of user activity
-- [x] **User Profile Display**: Show user info from session
-- [ ] **Favorites/Wishlist**: Save and manage favorite hostels
+- [x] **Student Homepage**: Session-protected hostel discovery page
+- [x] **Student Dashboard**: API-backed favorites, unique hostels explored, search count, and recent activity
+- [x] **User Profile Display**: Name, email, and index number
+- [x] **Favorites/Wishlist**: Save and remove per-user saved hostels
 - [ ] **Booking Requests**: Express interest in hostels
 - [ ] **Dashboard Data**: Real data instead of mock values
 
@@ -56,13 +61,15 @@ The Minimum Viable Product (MVP) for GCTU StudentHostels is a **central hub for 
 - [x] **Deployment**: Live on Render and Netlify
 - [x] **SEO**: Sitemap.xml and Google Search Console setup
 
-### 3.2 In Scope - Critical Fixes (MVP Blockers)
-- [ ] **Secure Password Reset**: Fix OTP verification bypass vulnerability
-- [ ] **Remove Auth Bypass**: Remove or secure `/api/signup` route
-- [ ] **Secure Session Storage**: Don't store plaintext passwords in sessions
-- [ ] **OTP Security**: Hash OTPs and add attempt limits
-- [ ] **Hostel Data Migration**: Move from hardcoded to database
-- [ ] **Auth Middleware**: Implement route protection
+### 3.2 Security and Reliability Status
+- [x] Password reset requires a verified reset email and a 10-minute server-side session window
+- [x] `/api/signup` rejects direct signup; account creation follows the OTP flow
+- [x] Registration stores a bcrypt hash, not a plaintext password, in the temporary session
+- [x] Authentication routes have IP-based rate limits; API mutations require an allowed origin, except manager provisioning protected by `ADMIN_SECRET`
+- [x] Hostel listing creation requires an authenticated manager
+- [ ] OTP codes are stored in plaintext and have no per-code attempt counter; add hashing and attempt limits
+- [ ] Add automated tests and verify production configuration and live user journeys
+- [x] Hostel listings and dashboard features use MongoDB-backed APIs
 
 ### 3.3 Out of Scope for MVP
 | Feature | Reason | Future Phase |
@@ -71,10 +78,12 @@ The Minimum Viable Product (MVP) for GCTU StudentHostels is a **central hub for 
 | **Real-time Chat** | Not critical for discovery/connect flow | Post-MVP |
 | **Room Booking Calendar** | Requires complex availability management | Post-MVP |
 | **Mobile Apps** | Web-first approach is sufficient | Post-MVP |
-| **Review System Backend** | UI exists but needs moderation system | Post-MVP |
+| **Review System Backend** | Landing testimonials are static; there is no user-submitted review system | Post-MVP |
 | **Multi-campus Support** | Focus on GCTU first | Post-MVP |
 | **Hostel Image Upload** | Use external URLs initially | Post-MVP |
 | **Advanced Analytics** | Basic usage tracking sufficient | Post-MVP |
+
+Provisioned managers can create listings. Editing, deletion, and administrative moderation are not implemented.
 
 ## 4. MVP User Flows
 
@@ -89,9 +98,9 @@ The Minimum Viable Product (MVP) for GCTU StudentHostels is a **central hub for 
 ### 4.2 Student Login & Discovery
 1. Login with credentials → Session created
 2. Redirect to homepage/dashboard
-3. Browse hostels on landing page or authenticated home
-4. Use search/filters to find suitable hostels
-5. Click hostel card → Redirect to official hostel website
+3. Browse the public landing page or session-protected student homepage
+4. Search and filter the API-backed hostel list
+5. Open hostel details; follow an official site link if available or contact the manager by phone/WhatsApp
 
 ### 4.3 Password Reset
 1. Click "Forgot Password" on login
@@ -99,22 +108,20 @@ The Minimum Viable Product (MVP) for GCTU StudentHostels is a **central hub for 
 3. Verify OTP → Redirect to new password
 4. Set new password → Success, redirect to login
 
-### 4.4 Express Interest (Planned)
-1. Authenticated user views hostel details
-2. Click "Book/Express Interest"
-3. System records booking request
-4. Optionally redirect to hostel website
-5. Appears in user's dashboard bookings
+### 4.4 Contact a Manager (Implemented)
+1. Student opens a hostel details page
+2. Student uses the phone or WhatsApp link when a manager phone number is present
+3. This opens an external communication channel; it does not create an in-app booking or reservation
 
 ## 5. MVP Success Criteria
 
 ### Functional Criteria
-- [ ] All authentication flows work end-to-end without security bypasses
-- [ ] Users can browse, search, and filter hostels
-- [ ] Hostel data comes from database (not hardcoded)
-- [ ] Authenticated users have working dashboard
-- [ ] Favorites and booking requests functional
-- [ ] All critical security issues from PROJECT_PLAN addressed
+- [ ] Verify all authentication flows end-to-end against the running backend
+- [x] Users can browse, search, and filter API-backed hostels
+- [x] Hostel data is served from MongoDB
+- [x] Authenticated users have dashboard data for implemented features
+- [x] Favorites are functional; booking requests are not implemented
+- [ ] Complete remaining security work, including OTP hashing and attempt limits
 
 ### Technical Criteria
 - [ ] No plaintext passwords stored in sessions or logs
@@ -134,10 +141,10 @@ The Minimum Viable Product (MVP) for GCTU StudentHostels is a **central hub for 
 
 | Phase | Duration | Focus | Status |
 |---|---|---|---|
-| **Phase 1: Security Hardening** | 3-4 days | Fix critical vulnerabilities | To Do |
-| **Phase 2: Data Migration** | 2-3 days | Hostel model, API, seed data | To Do |
-| **Phase 3: User Features** | 2-3 days | Favorites, bookings, dashboard data | To Do |
-| **Phase 4: Testing & Polish** | 1-2 days | Bug fixes, validation, deployment check | To Do |
+| **Phase 1: Security Hardening** | Ongoing | Security controls are present; OTP hashing/attempt limits and broader validation remain | In Progress |
+| **Phase 2: Data & Hostel API** | Implemented in source | MongoDB hostel model, public reads, manager create, safe idempotent seed | Done in source |
+| **Phase 3: Student Features** | Partial | Favorites and dashboard activity done; booking requests are not implemented | In Progress |
+| **Phase 4: Testing & Deployment** | Ongoing | Syntax/manual checks only; automated tests and production E2E verification remain | To Do |
 
 **Total Estimated:** 1-2 weeks
 
@@ -146,12 +153,12 @@ The Minimum Viable Product (MVP) for GCTU StudentHostels is a **central hub for 
 | Deliverable | Description | Status |
 |---|---|---|
 | **Working Platform** | Deployed app on Netlify + Render | Done |
-| **Authentication System** | Complete auth flow with security | Done (needs hardening) |
-| **Hostel Discovery** | Browse, search, filter functionality | Done (needs DB migration) |
-| **User Dashboard** | Personalized student dashboard | Done (needs real data) |
-| **API Documentation** | Endpoint documentation | To Do |
-| **Environment Setup** | .env.example and setup instructions | To Do |
-| **Security Compliance** | All critical issues resolved | To Do |
+| **Authentication System** | Student OTP registration, sessions, role-aware login, password reset; admin-secret manager provisioning | Implemented in source; live flow unverified |
+| **Hostel Discovery** | API-backed search, filters, cards, and details | Implemented in source |
+| **User Dashboard** | Favorites, counts, and activity from authenticated APIs | Implemented in source; bookings absent |
+| **API Documentation** | Endpoint documentation | README overview; expand as needed |
+| **Automated Tests** | Unit/integration/E2E suite | Not configured |
+| **Security Compliance** | Controls and remaining gaps documented | Ongoing; OTP hardening remains |
 
 ## 8. MVP Risks & Mitigations
 
@@ -164,11 +171,11 @@ The Minimum Viable Product (MVP) for GCTU StudentHostels is a **central hub for 
 | **Email delivery limits** | Medium | Low | Monitor Brevo quota, have fallback plan |
 
 ## 9. Definition of Done (MVP)
-- [ ] No critical security vulnerabilities remain
-- [ ] Hostel data served from MongoDB via API
-- [ ] Authenticated users see real dashboard data
-- [ ] Favorites and booking requests work
+- [ ] Complete security review, including OTP hashing/attempt limits
+- [x] Hostel data served from MongoDB via API
+- [x] Authenticated users see real dashboard data for supported features
+- [x] Favorites work; booking requests are not implemented
 - [ ] All 6 required documents created and reviewed
-- [ ] Platform demonstrated and approved by stakeholders
+- [ ] Production deployment and end-to-end journey verified
 - [ ] README updated with setup instructions
 Winvalid-docs: false

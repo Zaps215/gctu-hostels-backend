@@ -9,7 +9,31 @@ const loginBtn = document.getElementById('LoginBtn');
 const loginIcon = document.getElementById('login-icon');
 const loginText = document.getElementById('login-text');
 const loginSpinner = document.getElementById('login-spinner');
+const selectedRole = new URLSearchParams(window.location.search).get('role') === 'manager'
+    ? 'manager'
+    : 'student';
 
+// 1. Role Parameter Detection & Dynamic UI updates
+document.addEventListener('DOMContentLoaded', () => {
+    const headerText = document.getElementById('header');
+    const signupLink = document.getElementById('showSignupFromSignupBtn');
+    const usernameInput = document.getElementById('Username');
+    const inputIcon = document.getElementById('inputIcon');
+
+    if (selectedRole === 'manager') {
+        if (headerText) headerText.textContent = 'Welcome Back';
+        if (usernameInput) usernameInput.placeholder = 'Hostel Name (e.g. Unidaz)';
+        if (inputIcon) inputIcon.className = 'fas fa-building input-icon';
+    } else {
+        if (headerText) headerText.textContent = 'Welcome Back';
+        if (usernameInput) usernameInput.placeholder = 'Enter your Index Number';
+        if (inputIcon) inputIcon.className = 'fas fa-user-graduate input-icon';
+    }
+
+    if (signupLink) {
+        signupLink.href = `signup.html?role=${selectedRole}`;
+    }
+});
 // Login loading spinner helper function
 function setLoading(isLoading) {
   if (isLoading) {
@@ -47,7 +71,7 @@ loginForm.addEventListener('submit', async function(e) {
     const inputUsername = document.getElementById('Username').value.trim();
     const inputPassword = document.getElementById('password').value;
 
-    errorDisplay.innerText = "";
+    if (errorDisplay) errorDisplay.innerText = "";
 
 
     try {
@@ -57,44 +81,56 @@ loginForm.addEventListener('submit', async function(e) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ username: inputUsername, password: inputPassword })
+            body: JSON.stringify({
+                username: inputUsername,
+                password: inputPassword,
+                role: selectedRole
+            })
         });
 
-        const data = await response.json(); 
-         console.log("Response:", data);
+        const data = await response.json();
 
-        if (response.ok) {
-            // Save user to localStorage (for frontend state)
-            /*localStorage.setItem('registeredUser', JSON.stringify(data.user));*/
+        if (response.ok && data.user) {
+            const user = data.user;
+            const userName = user.fullName || user.username || 'User';
+            const userRole = user.role;
 
+            if (userRole !== 'manager' && userRole !== 'student') {
+                throw new Error('The server returned an unsupported account role.');
+            }
 
-        // Show success popup
-       const loginPopup = document.getElementById('loginPopup');
-        const popupMessage = document.getElementById('popupMessage');
-        
-        const userName = data.user.fullName || data.user.username || 'Student';
-        popupMessage.innerHTML = `Welcome back, ${userName}! Redirecting to Homepage...`;
-        
-        loginPopup.classList.add('show');
-        
-        document.getElementById('popupOkBtn').onclick = function() {
-            window.location.replace('homepage.html');
-        }; 
-        // Redirect immediately - no popup
-/*window.location.href = 'homepage.html';*/
-    } else {
-        errorDisplay.innerText = data.error || "Login failed! Please check your details.";
-    }
- } catch (err) {
+            // Dynamic redirect based on database role
+            const targetRedirect = userRole === 'manager' ? 'add-hostel.html' : 'homepage.html';
+            const loginPopup = document.getElementById('loginPopup');
+            const popupMessage = document.getElementById('popupMessage');
+
+            if (loginPopup && popupMessage) {
+                popupMessage.textContent = userRole === 'manager'
+                    ? `Welcome back, ${userName}! Redirecting to Manager Portal...`
+                    : `Welcome back, ${userName}! Redirecting to Homepage...`;
+
+                loginPopup.classList.add('show');
+
+                document.getElementById('popupOkBtn').onclick = function() {
+                    window.location.replace(targetRedirect);
+                };
+                setTimeout(() => {
+                    window.location.replace(targetRedirect);
+                }, 1500);
+            } else {
+                window.location.replace(targetRedirect);
+            }
+        } else {
+            if (errorDisplay) {
+                errorDisplay.innerText = data.error || data.message || "Login failed! Please check your details.";
+            }
+        }
+    } catch (err) {
         console.error("Error:", err);
-        errorDisplay.innerText = "Connection Failed! Please try again";
+        if (errorDisplay) {
+            errorDisplay.innerText = "Connection Failed! Please try again";
+        }
     } finally {
-        // Always re-enable the button so user can try again
-        const loginBtn = document.getElementById('LoginBtn');
-        setLoading(false); // <--- STOP THE SPINNER HERE (Runs on success or fail)
-if (loginBtn) {
-        loginBtn.disabled = false;
-        loginBtn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Login';
-    }
+        setLoading(false); // Restores button state safely using inner elements
     }
 });

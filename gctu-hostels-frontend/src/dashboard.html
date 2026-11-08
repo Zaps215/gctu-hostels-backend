@@ -448,17 +448,6 @@
                 return true;
             });
 
-            // Calculate unique hostel views from activities or localStorage
-const uniqueHostelViews = new Set(
-    dashboard.activities
-        .filter(act => act.action && act.action.startsWith('Viewed'))
-        .map(act => act.action)
-).size;
-
-// Fallback to local unique count if available
-const localExplored = JSON.parse(localStorage.getItem('exploredHostels')) || [];
-const uniqueCount = Math.max(uniqueHostelViews, localExplored.length);
-
             container.innerHTML = `
             <!-- Header Section (Data from Database) -->
             <div class="welcome-section">
@@ -478,7 +467,7 @@ const uniqueCount = Math.max(uniqueHostelViews, localExplored.length);
                 </div>
                 <div class="stat-card">
                     <i class="fas fa-eye"></i>
-                   <h3>${uniqueCount}</h3>
+                    <h3>${stats.hostelsViewed}</h3>
                     <p>Hostels Explored</p>
                 </div>
                 <div class="stat-card">
@@ -523,21 +512,9 @@ const uniqueCount = Math.max(uniqueHostelViews, localExplored.length);
                         <span class="profile-value">${escapeHtml(user.email || 'Not provided')}</span>
                     </div>
                     <div class="profile-row">
-                        <span class="profile-label">Phone Number</span>
-                        <span class="profile-value">${escapeHtml(user.phone || 'Not provided')}</span>
+                        <span class="profile-label">Index Number</span>
+                        <span class="profile-value">${escapeHtml(user.indexNumber || 'Not provided')}</span>
                     </div>
-                    ${user.studentId ? `
-                    <div class="profile-row">
-                        <span class="profile-label">Student ID</span>
-                        <span class="profile-value">${escapeHtml(user.studentId)}</span>
-                    </div>
-                    ` : ''}
-                    ${user.program ? `
-                    <div class="profile-row">
-                        <span class="profile-label">Academic Program</span>
-                        <span class="profile-value">${escapeHtml(user.program)}</span>
-                    </div>
-                    ` : ''}
                 </div>
             </div>
 

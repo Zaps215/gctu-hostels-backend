@@ -31,12 +31,13 @@ function safeHttpUrl(value) {
 }
 
 function renderHostelCard(hostel) {
+    const detailsUrl = `hostel-details.html?id=${encodeURIComponent(hostel._id)}`;
     const imageUrl = safeHttpUrl(hostel.coverImage || hostel.image) ||
         'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80';
     const officialUrl = safeHttpUrl(hostel.officialUrl);
 
     return `
-        <div class="hostel-card" data-id="${escapeHtml(hostel._id)}">
+        <div class="hostel-card">
             <div class="card-img">
                  <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(hostel.name)}">
             </div>
@@ -57,6 +58,7 @@ function renderHostelCard(hostel) {
                         </a>
                     </div>
                 ` : ''}
+                <a class="view-badge" href="${escapeHtml(detailsUrl)}">View Details &amp; Contact</a>
             </div>
         </div>
     `;
@@ -296,8 +298,59 @@ function setupEventListeners() {
     }
 }
 
+// Check active session on page load
+async function checkUserSession() {
+    const authButtonsContainer = document.getElementById("authButtons");
+    if (!authButtonsContainer) return;
+
+    try {
+        const response = await fetch(`${API_CONFIG.AUTH_API}/me`, { credentials: 'include' });
+        if (response.ok) {
+            const data = await response.json();
+            const user = data?.user;
+            const dashboardUrl = user?.role === 'manager'
+                ? '/add-hostel.html'
+                : user?.role === 'student'
+                    ? '/dashboard.html'
+                    : null;
+
+            if (!dashboardUrl) {
+                throw new Error('The authenticated user response contains an unsupported role.');
+            }
+
+            authButtonsContainer.innerHTML = `
+                <span style="font-size: 14px; font-weight: 600; margin-right: 10px;">Hi, ${escapeHtml(user.fullName)}</span>
+                <a href="${dashboardUrl}" class="btn-outline" style="padding: 6px 16px; font-size: 14px; text-decoration: none; display: inline-block;">Dashboard</a>
+                <button class="btn-primary" id="logoutBtn" style="padding: 6px 16px; font-size: 14px;">Logout</button>
+            `;
+
+            const logoutButton = document.getElementById("logoutBtn");
+            logoutButton.addEventListener("click", async () => {
+                logoutButton.disabled = true;
+                try {
+                    const logoutResponse = await fetch(`${API_CONFIG.AUTH_API}/logout`, {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    if (!logoutResponse.ok) {
+                        throw new Error(`Logout request failed with status ${logoutResponse.status}.`);
+                    }
+                    window.location.reload();
+                } catch (error) {
+                    console.error('Logout request failed:', error);
+                    alert('We could not sign you out. Please check your connection and try again.');
+                    logoutButton.disabled = false;
+                }
+            });
+        }
+    } catch (err) {
+        console.error('Unable to load the active session:', err);
+    }
+}
+
 // Initialize on DOM Load
 document.addEventListener("DOMContentLoaded", () => {
+    checkUserSession(); //  session check
     loadHostelsFromAPI();
     renderTestimonials();
     setupEventListeners();

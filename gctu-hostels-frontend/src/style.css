@@ -50,13 +50,14 @@ body{
 }
 
 #header{
-    font-size: 1.875rem;
+    font-size: 1.675rem;
     font-weight: bold;
 }
 
 .underHeader{
     color: #64748b; 
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.5rem;
+
 }
 
 .underHead{
@@ -285,7 +286,15 @@ body{
 }
 
 #otpModal .modal-content {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    border-radius: 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+    padding: 2.5rem 2rem;
     max-width: 450px;
+    width: 90%;
+    text-align: center;
 }
 
 #otpModal .modal-buttons {
@@ -306,13 +315,25 @@ body{
 }
 
 #otpCode {
-    width: 200px;
-    padding: 15px;
-    font-size: 24px;
+    width: 100%;
+    max-width: 260px;
+    padding: 14px;
+    font-size: 1.8rem;
+    font-weight: 700;
     text-align: center;
-    letter-spacing: 10px;
-    border-radius: 12px;
-    border: 1px solid #ddd;
+    letter-spacing: 8px;
+    border-radius: 16px;
+    border: 2px solid #e0d5c8;
+    background: #fcf9f4;
+    color: #1e2a2f;
+    outline: none;
+    transition: all 0.2s;
+}
+
+#otpCode:focus {
+    border-color: #f97316;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15);
 }
 
 #otpTimerDisplay {

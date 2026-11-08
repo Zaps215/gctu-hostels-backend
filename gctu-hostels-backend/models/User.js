@@ -7,9 +7,23 @@ const userSchema = new mongoose.Schema({
     },
     username: {
         type: String,
-        required: [true, 'Username is required'],
+        required: [true, 'Username/Identifier is required'],
         unique: true,
 
+    },
+    role: {
+        type: String,
+        enum: ['student', 'manager'],
+        default: 'student',
+        required: true
+    },
+    indexNumber: {
+        type: String,
+        trim: true
+    },
+    hostelName: {
+        type: String,
+        trim: true
     },
     email: {
         type: String,
@@ -23,6 +37,16 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Password is required'],
         minlength: [6, 'Password must be at least 6 characters']
     },
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    otp: {
+        type: String
+    },
+    otpExpires: {
+        type: Date
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -31,7 +55,7 @@ const userSchema = new mongoose.Schema({
 
 // Hash password before saving
 userSchema.pre('save', async function() {
-    if (!this.isModified('password')) return;
+    if (!this.isModified('password') || this.$locals.passwordAlreadyHashed) return;
     
     
        const salt = await bcrypt.genSalt(10);
@@ -44,7 +68,6 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 module.exports = mongoose.model('User', userSchema);
-
 
 
 

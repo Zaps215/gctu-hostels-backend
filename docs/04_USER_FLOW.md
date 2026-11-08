@@ -1,9 +1,9 @@
 # USER FLOW Document
 
 **Project:** GCTU StudentHostels
-**Version:** 1.0
-**Date:** October 2026
-**Status:** Active
+**Version:** 1.1
+**Date:** November 2026
+**Status:** Active Development — source-state snapshot
 **Related:** PRD v1.0, MVP Scope v1.0
 
 ---
@@ -12,13 +12,16 @@
 
 This document maps out all user journeys through the GCTU StudentHostels platform - the central hub aggregating all hostel platforms for GCTU students. It details interactions, decision points, and system responses for different user types.
 
+**Implementation note:** Flows below reflect the current local source. Current uncommitted changes and deployed service behavior have not been verified end to end.
+
 ## 2. User Types
 
 | User Type | Access Level | Description |
 |---|---|---|
 | **Guest/Visitor** | Public | Unauthenticated user browsing hostels |
 | **Student** | Authenticated | Registered student using the platform |
-| **Admin** | Privileged | System administrator (planned) |
+| **Hostel Manager** | Authenticated | Admin-provisioned account that can create a listing |
+| **Administrator** | Backend-only | Provisions managers using `ADMIN_SECRET`; no admin portal |
 
 ## 3. User Flows
 
@@ -31,7 +34,8 @@ graph TD
     B --> C[View Hostel Listings]
     C --> D[Use Search/Filters]
     D --> E[View Hostel Card]
-    E --> F[Click Hostel → External Site]
+    E --> F[Open Hostel Details]
+    F --> G[Phone / WhatsApp / Official Site]
 ```
 
 **Steps:**
@@ -39,8 +43,9 @@ graph TD
 2. **Discovery**: Views hero section, statistics, hostel listings
 3. **Search**: Can search by name/location or use filters (availability, budget, distance)
 4. **Browse**: Scrolls through hostel cards with images, price, location
-5. **Action**: Clicks "View/Book" → Redirected to official hostel website
-6. **Exit**: Leaves platform to complete booking on hostel's site
+5. **Action**: Open the listing detail page from its card
+6. **Contact**: Use the manager's phone/WhatsApp link when a phone number is available, or follow the official-site link when supplied
+7. Contact links open external channels and do not create an in-app booking
 
 #### Flow 2: Contact Form Submission
 ```mermaid
@@ -53,9 +58,9 @@ graph TD
 
 **Steps:**
 1. Navigate to contact section
-2. Fill name, email, message
-3. Submit form (handled by Netlify)
-4. Redirect to thank-you page
+2. Fill name, email, optional subject, and message
+3. Submit the `contact` form through Netlify Forms when deployed and configured
+4. Redirect to `thankyou.html`; successful Netlify delivery has not been verified locally
 
 ### 3.2 Student Registration Flow
 
@@ -79,10 +84,10 @@ graph TD
 
 **Detailed Steps:**
 1. **Initiation**: Click "Sign Up" from landing page or login page
-2. **Form Input**: Enter fullName, username, email, password
+2. **Form Input**: Enter full name, numeric GCTU index number, email, and password
 3. **Client Validation**: Check password strength (8+ chars, uppercase, lowercase, number, special char)
 4. **Submit**: POST to `/api/send-otp`
-5. **Server Validation**: Check duplicates, generate 6-digit OTP, save to session, send email
+5. **Server Validation**: Reject manager role, validate index number and password, check duplicates, generate OTP, store OTP and a temporary bcrypt password hash, and send email
 6. **OTP Modal**: Display with masked email, 10-minute countdown timer
 7. **Verification**: User enters OTP, POST to `/api/verify-otp`
 8. **Account Creation**: Server validates OTP, creates User, clears session
@@ -183,7 +188,7 @@ graph TD
     H --> I[Redirect to Login]
 ```
 
-**Security Note:** Current implementation has bypass vulnerability - needs verification token enforcement.
+**Security:** A successful OTP verification sets `resetEmail` and `resetVerifiedAt` in the server-side session. Password reset requires a matching email and an unexpired 10-minute verification window. OTP values are currently plaintext and do not have a per-code attempt counter.
 
 ### 3.5 Authenticated Student Flows
 
@@ -195,8 +200,8 @@ graph TD
     C --> D{Authenticated}
     D -->|No| E[Redirect to Login]
     D -->|Yes| F[Display User Info]
-    F --> G[Show Recommendations]
-    G --> H[Show Recent Activity]
+    F --> G[Fetch Hostel Listings]
+    G --> H[Search / Filter / Open Details]
 ```
 
 **Steps:**
@@ -204,8 +209,8 @@ graph TD
 2. JavaScript calls GET `/api/me`
 3. If 401/unauthenticated → Redirect to login
 4. If authenticated → Display user's fullName/initials
-5. Show recommended hostels (currently mock data)
-6. Show the user's persisted recent activity
+5. Fetch listings from `GET /api/hostels`; search and filters apply client-side
+6. Open hostel details, save a favorite, or use manager contact options
 
 #### Flow 10: Access Student Dashboard
 ```mermaid
@@ -216,20 +221,18 @@ graph TD
     D --> E{Authenticated}
     E -->|No| F[Redirect to Login]
     E -->|Yes| G[Display Dashboard]
-    G --> H[Show Stats, Bookings, Favorites]
+    G --> H[Show Stats, Favorites, Profile, Activity]
 ```
 
 **Dashboard Sections:**
 - Welcome section with avatar
-- Stats cards (bookings count, saved count, spent amount)
-- Current bookings
-- Booking history
+- Stats cards (saved hostels, unique hostels explored, searches made, account status)
 - Saved/favorite hostels
-- Profile summary
+- Profile summary (name, email, index number)
 - Recent activity
 - Dark mode toggle
 
-#### Flow 11: Manage Favorites (Planned)
+#### Flow 11: Manage Favorites (Implemented)
 ```mermaid
 graph TD
     A[Browse Hostels] --> B[Click Heart Icon]
@@ -241,31 +244,32 @@ graph TD
     G --> H[View in Dashboard]
 ```
 
-#### Flow 12: Express Booking Interest (Planned)
+#### Flow 12: Contact a Hostel Manager (Implemented)
 ```mermaid
 graph TD
-    A[Hostel Details] --> B[Click Book Now]
-    B --> C{Authenticated}
-    C -->|No| D[Redirect to Login]
-    C -->|Yes| E[POST /api/bookings]
-    E --> F[Create Booking Request]
-    F --> G[Show Confirmation]
-    G --> H[Optionally Redirect to Hostel Site]
-    H --> I[Appear in Dashboard]
+    A[Hostel Details] --> B{Phone number present}
+    B -->|No| C[Contact unavailable message]
+    B -->|Yes| D[Call or WhatsApp]
+    D --> E[Open external application]
+    E --> F[Record contact activity if logged in]
 ```
 
-### 3.6 Admin Flows (Planned)
+This flow does not create a reservation or booking record.
 
-#### Flow 13: Admin Hostel Management
+### 3.6 Manager and Administrator Flows
+
+#### Flow 13: Provision Manager and Publish Listing
 ```mermaid
 graph TD
-    A[Admin Login] --> B[Admin Dashboard]
-    B --> C[Hostel Management]
-    C --> D[Add/Edit/Delete Hostel]
-    D --> E[POST/PUT/DELETE /api/hostels]
-    E --> F[Update Database]
-    F --> G[Reflect on Public Site]
+    A[Administrator trusted environment] --> B[POST /api/register-manager with x-admin-secret]
+    B --> C[Create verified manager account]
+    C --> D[Manager signs in with manager portal]
+    D --> E[Open add-hostel.html]
+    E --> F[POST /api/hostels]
+    F --> G[Listing appears in API-backed discovery]
 ```
+
+There is no public manager signup. Managers can create listings; update/delete operations and a separate admin dashboard are not implemented.
 
 ## 4. State Diagrams
 
@@ -291,8 +295,10 @@ No Session → Login Success → Active Session (24h) → Expired/Logout → No 
 | `forgot-password.html` | Password reset request | Guest | Request reset |
 | `verify-reset-otp.html` | Reset OTP verification | Guest | Verify OTP |
 | `set-new-password.html` | New password setup | Guest | Set password |
-| `homepage.html` | Student home | Student | View recommendations, navigate |
-| `dashboard.html` | Student dashboard | Student | Manage profile, bookings, favorites |
+| `homepage.html` | Authenticated hostel discovery | Student | Search/filter listings, open details, navigate |
+| `hostel-details.html` | Hostel information | Guest/Student | Read details, save (student), contact manager |
+| `dashboard.html` | Student dashboard | Student | View favorites, profile, counts, and activity |
+| `add-hostel.html` | Manager listing form | Manager | Create a hostel listing |
 
 ## 6. Decision Points & Business Rules
 
@@ -301,20 +307,23 @@ No Session → Login Success → Active Session (24h) → Expired/Logout → No 
 - Username must be unique
 - Password must meet strength requirements
 - OTP expires after 10 minutes
+- Reset authorization is tied to a server-side session and verified email for 10 minutes
 - Session expires after 24 hours
 - Max 10 auth attempts per 15 minutes per IP
+- Manager signup is disabled publicly; account creation requires the admin secret
+- Managers can create listings; students cannot
 
 ### Discovery Rules
 - All hostels shown on public listing are visible to guests
 - Search is case-insensitive (client-side currently)
 - Filters are applied client-side
-- Clicking hostel redirects to external official URL
+- Clicking the details action opens `hostel-details.html`
+- Phone/WhatsApp contacts are external actions and do not create booking requests
+- Search/filtering on the frontend is client-side against fetched API listings
 
-### Booking Rules (Planned)
-- Only authenticated users can express interest
-- Each user can have multiple booking requests
-- Booking request doesn't guarantee room availability
-- User must be redirected to hostel's official site for actual booking
+### Booking Rules
+- In-app booking requests and reservations are not implemented
+- Students contact hostel managers directly using listed phone/WhatsApp or official-site links
 
 ## 7. Error Handling Flows
 
@@ -353,4 +362,4 @@ No Session → Login Success → Active Session (24h) → Expired/Logout → No 
 
 ---
 
-**Note:** Flows marked as "Planned" represent features not yet fully implemented but are part of the MVP roadmap or future phases.
+**Note:** Features explicitly labeled not implemented/planned are roadmap items. Local source changes may not yet be deployed or verified against production.
