@@ -269,7 +269,7 @@ graph TD
     F --> G[Listing appears in API-backed discovery]
 ```
 
-There is no public manager signup. Managers can create listings; update/delete operations and a separate admin dashboard are not implemented.
+There is no public manager signup. Provisioned managers use a separate dashboard to create, edit, and delete their own hostel listings. Administrative moderation is not implemented.
 
 ## 4. State Diagrams
 

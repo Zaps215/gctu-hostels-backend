@@ -98,10 +98,7 @@ const globalLimiter = rateLimit({
     max: 100, // Limit each IP to 100 requests per windowMs
     standardHeaders: true,
     legacyHeaders: false,
-    store: new RedisRateLimitStore({
-        prefix: 'gctu:rate-limit:global:',
-        sendCommand: (...args) => redisClient.sendCommand(args)
-    }),
+    
     message: { error: 'Too many requests from this IP, please try again later.' }
 });
 
@@ -111,10 +108,7 @@ const authLimiter = rateLimit({
     max: 10, // Max 10 attempts per IP per 15 minutes
     standardHeaders: true,
     legacyHeaders: false,
-    store: new RedisRateLimitStore({
-        prefix: 'gctu:rate-limit:auth:',
-        sendCommand: (...args) => redisClient.sendCommand(args)
-    }),
+   
     message: { error: 'Too many authentication attempts. Please try again after 15 minutes.' }
 });
 

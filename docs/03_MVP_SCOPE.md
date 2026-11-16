@@ -67,7 +67,7 @@ The Minimum Viable Product (MVP) for GCTU StudentHostels is a **central hub for 
 - [x] Registration stores a bcrypt hash, not a plaintext password, in the temporary session
 - [x] Authentication routes have IP-based rate limits; API mutations require an allowed origin, except manager provisioning protected by `ADMIN_SECRET`
 - [x] Hostel listing creation requires an authenticated manager
-- [ ] OTP codes are stored in plaintext and have no per-code attempt counter; add hashing and attempt limits
+- [x] OTP codes are HMAC-hashed, scoped by purpose, limited to five attempts, single-use, and cleaned up with a TTL index
 - [ ] Add automated tests and verify production configuration and live user journeys
 - [x] Hostel listings and dashboard features use MongoDB-backed APIs
 
@@ -83,7 +83,7 @@ The Minimum Viable Product (MVP) for GCTU StudentHostels is a **central hub for 
 | **Hostel Image Upload** | Use external URLs initially | Post-MVP |
 | **Advanced Analytics** | Basic usage tracking sufficient | Post-MVP |
 
-Provisioned managers can create listings. Editing, deletion, and administrative moderation are not implemented.
+Provisioned managers have a separate dashboard to create, edit, and delete their own listings. Administrative moderation is not implemented.
 
 ## 4. MVP User Flows
 
@@ -121,7 +121,7 @@ Provisioned managers can create listings. Editing, deletion, and administrative 
 - [x] Hostel data is served from MongoDB
 - [x] Authenticated users have dashboard data for implemented features
 - [x] Favorites are functional; booking requests are not implemented
-- [ ] Complete remaining security work, including OTP hashing and attempt limits
+- [ ] Complete remaining security work, including broad input validation and production verification
 
 ### Technical Criteria
 - [ ] No plaintext passwords stored in sessions or logs
@@ -141,7 +141,7 @@ Provisioned managers can create listings. Editing, deletion, and administrative 
 
 | Phase | Duration | Focus | Status |
 |---|---|---|---|
-| **Phase 1: Security Hardening** | Ongoing | Security controls are present; OTP hashing/attempt limits and broader validation remain | In Progress |
+| **Phase 1: Security Hardening** | Ongoing | OTP hashing/attempt limits are implemented; broader validation and production verification remain | In Progress |
 | **Phase 2: Data & Hostel API** | Implemented in source | MongoDB hostel model, public reads, manager create, safe idempotent seed | Done in source |
 | **Phase 3: Student Features** | Partial | Favorites and dashboard activity done; booking requests are not implemented | In Progress |
 | **Phase 4: Testing & Deployment** | Ongoing | Syntax/manual checks only; automated tests and production E2E verification remain | To Do |
@@ -157,8 +157,8 @@ Provisioned managers can create listings. Editing, deletion, and administrative 
 | **Hostel Discovery** | API-backed search, filters, cards, and details | Implemented in source |
 | **User Dashboard** | Favorites, counts, and activity from authenticated APIs | Implemented in source; bookings absent |
 | **API Documentation** | Endpoint documentation | README overview; expand as needed |
-| **Automated Tests** | Unit/integration/E2E suite | Not configured |
-| **Security Compliance** | Controls and remaining gaps documented | Ongoing; OTP hardening remains |
+| **Automated Tests** | Unit/integration/E2E suite | OTP unit tests configured; integration/E2E tests remain |
+| **Security Compliance** | Controls and remaining gaps documented | OTP hardening implemented; broader work remains |
 
 ## 8. MVP Risks & Mitigations
 
@@ -171,7 +171,7 @@ Provisioned managers can create listings. Editing, deletion, and administrative 
 | **Email delivery limits** | Medium | Low | Monitor Brevo quota, have fallback plan |
 
 ## 9. Definition of Done (MVP)
-- [ ] Complete security review, including OTP hashing/attempt limits
+- [ ] Complete security review and verify the hardened OTP flows in production
 - [x] Hostel data served from MongoDB via API
 - [x] Authenticated users see real dashboard data for supported features
 - [x] Favorites work; booking requests are not implemented

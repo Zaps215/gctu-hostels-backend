@@ -101,14 +101,15 @@ gctu-hostels-frontend/src/
 ```javascript
 {
   email: { type: String, required: true },
-  code: { type: String, required: true },
+  codeHash: { type: String, required: true }, // HMAC-SHA256; never store the submitted code
+  purpose: { type: String, enum: ['signup', 'password-reset'], required: true },
+  attempts: { type: Number, default: 0 },
   expiresAt: { type: Date, required: true },
-  used: { type: Boolean, default: false },
-  signupData: { fullName: String, username: String, password: String } // optional legacy field
+  used: { type: Boolean, default: false }
 }
 ```
 
-OTP records are replaced by email when new codes are issued and checked against expiration in the routes. Codes are currently stored in plaintext; hashing, per-code attempt limits, and TTL cleanup are not implemented. Registration data is held in the session, not this model.
+OTP codes are HMAC-hashed with `OTP_SECRET`, falling back to `SESSION_SECRET` when the dedicated secret is not configured. Codes are scoped to signup or password reset, expire after 10 minutes, allow at most five guesses, and are consumed atomically on successful verification. Expired records are removed by a MongoDB TTL index (which may run after the expiration time). Registration data is held in the session, not this model. Existing OTP documents without a purpose/hash are not valid after this schema change; users must request a new code after deployment.
 
 ### 4.3 Hostel Model
 ```javascript
@@ -178,9 +179,13 @@ Student signup accepts a numeric GCTU index number. Manager accounts are not sel
 |---|---|---|---|---|
 | GET | `/api/hostels` | No | - | List hostels; supports university, gender, maxPrice, search, and sort query parameters |
 | GET | `/api/hostels/:id` | No | - | Get single hostel details |
+| GET | `/api/hostels/mine` | Yes | Manager | List the signed-in manager's own listings |
+| GET | `/api/hostels/mine/:id` | Yes | Owning manager | Get one owned listing for editing |
 | POST | `/api/hostels` | Yes | Manager | Create a hostel listing |
+| PUT | `/api/hostels/:id` | Yes | Owning manager | Update an owned listing; public API reads return the updated data |
+| DELETE | `/api/hostels/:id` | Yes | Owning manager | Delete an owned listing |
 
-Listing update/delete, pagination, and moderation routes are not implemented.
+Pagination and moderation routes are not implemented. Legacy listings without an owner are not editable through the manager portal.
 
 ### 5.4 User Activity and Dashboard Endpoints
 
@@ -222,7 +227,6 @@ Booking endpoints are not implemented.
 ### 6.2 Remaining Security and Reliability Work
 | Gap | Risk | Mitigation Plan |
 |---|---|---|
-| **OTP stored in plaintext and unlimited verification attempts per code** | OTP exposure or guessing | Hash OTP values and enforce a small attempt limit |
 | **Validation coverage is incomplete** | Invalid or abusive values may reach persistence | Add route-level schemas for auth and hostel payloads; retain model validation |
 | **Authentication and reset routes are not integration-tested** | Regressions may escape syntax checks | Add automated tests for registration, role checks, reset, favorites, and dashboard |
 | **Deployment configuration is unverified for current changes** | Production behavior can diverge from local source | Verify allowlists, secrets, cookies, mail, database, and E2E behavior after deployment |
@@ -326,7 +330,7 @@ No automated test runner or test suite is configured. Current verification uses 
 2. **High**: Add automated auth, authorization, hostel, favorite, and dashboard tests
 3. **High**: Add comprehensive validation for incoming auth and listing payloads
 4. **High**: Verify deployed CORS/origin allowlist, secrets, email, sessions, and end-to-end flows
-5. **Medium**: Add listing edit/delete and admin moderation workflows
+5. **Medium**: Add administrative moderation workflows; owner-scoped manager listing CRUD is implemented
 6. **Medium**: Implement booking requests only after defining status ownership and manager workflows
 
 ## 15. Compliance and Standards

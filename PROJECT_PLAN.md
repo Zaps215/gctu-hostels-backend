@@ -227,8 +227,8 @@ Status: **Complete**
 
 ### High priority
 
-1. **Hostel management has no admin authorization.** Any authenticated user can currently create a hostel through `POST /api/hostels`.
-2. **OTP codes are stored in plaintext and have no per-code attempt counter.** The auth rate limiter is the only attempt protection.
+1. **Manager listing ownership is enforced in source.** Manager dashboard and owner-scoped create/update/delete routes are implemented; automated route-level tests and production verification remain.
+2. **OTP hardening is implemented in source:** HMAC-hashed codes, purpose separation, five-attempt limit, atomic one-time consumption, and TTL cleanup. Automated regression tests and live-flow verification remain.
 3. **Input validation is inconsistent across routes, and there is no centralized validation layer.**
 4. **`middleware/authMiddleware.js` is empty and unused.** `middleware/auth.js` currently protects authenticated routes, but role-based authorization is not implemented.
 5. **There are no committed automated tests or CI checks.** The recent activity/favorites flow has only been smoke-tested.
@@ -242,7 +242,7 @@ Status: **Complete**
 
 ### Low priority
 
-10. `OTP` model contains an unused `signupData` field.
+10. Dependency vulnerabilities were cleared in the local package audit; rerun the audit as part of dependency updates.
 11. The sitemap only lists static pages.
 12. Some UI copy and footer links (KNUST, UG, UCC) are unrelated to GCTU.
 13. No image asset pipeline; hostel images rely on external URLs.
@@ -254,9 +254,9 @@ Status: **Complete**
 
 ### Phase 1 — Security and cleanup (1 week)
 
-Status: **Core bypass fixes implemented; OTP hardening, broad validation, and regression tests remain.**
+Status: **Core auth bypass fixes and OTP hardening implemented; broader validation and live-flow verification remain.**
 
-- Hash OTP codes before storage and add an attempt counter.
+- Add automated OTP regression tests and verify signup/reset flows against the deployed environment.
 - Add consistent input validation for all routes and targeted auth integration tests.
 - Add `.env.example` and rotate any exposed credentials.
 
@@ -264,14 +264,13 @@ Status: **Core bypass fixes implemented; OTP hardening, broad validation, and re
 
 ### Phase 2 — Hostel catalog API (1–2 weeks)
 
-Status: **Core model, seed data, read API, and frontend API loading are implemented; admin authorization, pagination, and broader API testing remain.**
+Status: **Core model, seed data, public read API, frontend API loading, and manager-owned listing CRUD are implemented; pagination, automated route tests, and production verification remain.**
 
-- Extend the current hostel routes with pagination and admin-only create/update/delete operations.
-- Add `requireAdmin` authorization and connect it to a user role.
+- Add pagination and administrative moderation operations.
 - Continue replacing any remaining hardcoded hostel content with API data.
 - Add integration coverage for public listing, filters, and protected writes.
 
-**Acceptance criteria:** one source of truth for hostel data; public listing works while unauthenticated; admin writes are protected.
+**Acceptance criteria:** one source of truth for hostel data; public listing works while unauthenticated; manager writes are restricted to the owning account.
 
 ### Phase 3 — User activity, favourites, and bookings (2 weeks)
 
@@ -292,7 +291,7 @@ Status: **Favorites, activity events, and dashboard counts are now persisted per
 Objective: allow non-developers to manage listings.
 
 - Add a `role` field to the User model (`student`, `admin`).
-- Build admin-only hostel CRUD screens.
+- Verify manager-owned hostel CRUD and dashboard flows in production.
 - Add image URL management or upload integration.
 - Add listing status (`draft`, `published`, `archived`).
 - Add moderation for testimonials/reviews if they are moved to the database.

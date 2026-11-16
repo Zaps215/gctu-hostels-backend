@@ -66,7 +66,7 @@ Create a centralized digital platform where all GCTU-approved hostels can be lis
 - **Profile Display**: Show the verified account name, email, and index number; profile editing is not implemented
 
 ### 5.3 Manager and Administrator Features
-- **Manager Listing Creation**: A provisioned manager can publish a hostel listing from the manager portal. Listing edit/delete and moderation are not implemented.
+- **Manager Listing Management**: A provisioned manager can create, edit, and delete their own hostel listings from a separate dashboard. Administrative moderation is not implemented.
 - **Manager Provisioning**: An administrator creates manager accounts through the `POST /api/register-manager` endpoint using the server-side `ADMIN_SECRET`; there is no public manager registration or admin UI.
 - **Administration UI, User Management, Moderation, and Admin Analytics**: Not implemented.
 
@@ -79,7 +79,7 @@ Create a centralized digital platform where all GCTU-approved hostels can be lis
 | US-003 | As a student, I want to search and filter hostels so I can find suitable options within budget | P0 | Done |
 | US-004 | As a student, I want to save favorite hostels so I can compare them later | P0 | Implemented |
 | US-005 | As a student, I want to request booking for a hostel so I can express interest | P0 | Not implemented |
-| US-006 | As a manager, I want to publish a hostel listing so students can find it | P0 | Create only; edit/delete not implemented |
+| US-006 | As a manager, I want to create, edit, and delete my own hostel listings so students see current information | P0 | Manager dashboard and owner-scoped CRUD implemented |
 | US-007 | As a student, I want to reset my password if forgotten so I can regain access | P0 | Done |
 
 ## 7. Success Metrics
@@ -121,7 +121,7 @@ Create a centralized digital platform where all GCTU-approved hostels can be lis
 - [x] Favorites and dashboard activity/statistics use authenticated API routes
 - [x] Manager-only hostel listing creation is implemented; manager accounts are provisioned by admin secret
 - [ ] Full booking-request and payment workflows
-- [ ] Hostel listing edit/delete, admin UI, moderation, and user-management UI
+- [ ] Administrative moderation and user-management UI
 - [ ] OTP hashing and per-code verification attempt limits
 - [ ] Automated test suite and CI
 - [ ] Verify current changes and end-to-end flows against production
