@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { randomInt } = require('crypto');
+const { consumeOtp, hashOtp, isValidOtpCode } = require('../utils/otpSecurity');
 const router = express.Router();
 const User = require('../models/User');
 const OTP = require('../models/OTP');
@@ -16,13 +17,35 @@ function saveSession(session) {
     });
 }
 
+function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[character]);
+}
+
 // POST /api/register-manager (Admin-only)
 router.post('/register-manager', verifyAdminSecret, async (req, res) => {
     try {
         const { fullName, username, email, password } = req.body;
 
+        if (![fullName, username, email, password].every(value => typeof value === 'string' && value.trim())) {
+            return res.status(400).json({ success: false, error: 'Full name, username, email, and password are required.' });
+        }
+        const passwordCheck = validatePassword(password);
+        if (!passwordCheck.isValid) {
+            return res.status(400).json({ success: false, error: passwordCheck.errors[0] });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedUsername = username.trim();
         // 1. Check if user already exists
-        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+        const existingUser = await User.findOne({
+            $or: [{ email: normalizedEmail }, { username: normalizedUsername }]
+        });
         if (existingUser) {
             return res.status(400).json({ success: false, error: 'User with this email or username already exists.' });
         }
@@ -30,8 +53,8 @@ router.post('/register-manager', verifyAdminSecret, async (req, res) => {
         // The User model hashes passwords before saving.
         const newManager = await User.create({
             fullName,
-            username,
-            email,
+            username: normalizedUsername,
+            email: normalizedEmail,
             password,
             role: 'manager', // 🔒 Explicitly enforced by admin route
             isVerified: true // Auto-verify manager accounts created by admin
@@ -54,7 +77,7 @@ router.post('/send-otp', async (req, res) => {
     try {
         const { email, fullName, username, password, role } = req.body;
 
-        if (!email || !fullName || !username || !password) {
+        if (![email, fullName, username, password].every(value => typeof value === 'string' && value.trim())) {
             return res.status(400).json({ error: 'All fields are required to process your registration.' });
         }
 
@@ -91,13 +114,19 @@ router.post('/send-otp', async (req, res) => {
 
         // Generate 6-digit verification code
         const code = randomInt(100000, 1000000).toString();
-        await OTP.deleteMany({ email: normalizedEmail });
-        await OTP.create({ email: normalizedEmail, code, expiresAt: new Date(Date.now() + 10 * 60 * 1000) });
+        const purpose = 'signup';
+        await OTP.deleteMany({ email: normalizedEmail, purpose });
+        await OTP.create({
+            email: normalizedEmail,
+            codeHash: hashOtp(normalizedEmail, purpose, code),
+            purpose,
+            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+        });
 
         const emailHtml = `
             <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; line-height: 1.5;">
                 <h2 style="color: #2b2d42;">GCTU StudentHostels Verification</h2>
-                <p>Hello ${fullName.trim()},</p>
+                <p>Hello ${escapeHtml(fullName.trim())},</p>
                 <p>Your verification code for <strong>Student Registration</strong> is:</p>
                 <h1 style="color: #f4a261; letter-spacing: 3px; background: #f8f9fa; padding: 10px 15px; display: inline-block; border-radius: 6px;">${code}</h1>
                 <p>This code will expire in 10 minutes. If you did not request this code, please ignore this email.</p>
@@ -140,14 +169,7 @@ router.post('/verify-otp', async (req, res) => {
 
         const normalizedEmail = email.trim().toLowerCase();
 
-        const otpRecord = await OTP.findOne({
-            email: normalizedEmail,
-            code: code.trim(),
-            expiresAt: { $gt: new Date() },
-            used: false
-        });
-
-        if (!otpRecord) {
+        if (!isValidOtpCode(code)) {
             return res.status(400).json({ error: 'The verification code provided is invalid or has expired.' });
         }
 
@@ -174,9 +196,9 @@ router.post('/verify-otp', async (req, res) => {
             return res.status(409).json({ error: 'An account with these credentials already exists.' });
         }
 
-        // Invalidate OTP code
-        otpRecord.used = true;
-        await otpRecord.save();
+        if (!await consumeOtp(normalizedEmail, 'signup', code)) {
+            return res.status(400).json({ error: 'The verification code provided is invalid or has expired.' });
+        }
 
         // Create Mongoose user instance safely
         const newUser = new User({
@@ -241,7 +263,7 @@ router.post('/login', async (req, res) => {
                 { indexNumber: trimmedIdentifier },
                 { hostelName: trimmedIdentifier }
             ]
-        });
+        }).select('+sessionVersion');
 
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials. Please verify your details and try again.' });
@@ -266,12 +288,7 @@ router.post('/login', async (req, res) => {
 
             req.session.userId = user._id;
             req.session.userRole = user.role;
-
-            try {
-                await Activity.create({ user: user._id, type: 'login' });
-            } catch (activityError) {
-                console.error('Unable to record successful login activity:', activityError);
-            }
+            req.session.authVersion = user.sessionVersion || 0;
 
             req.session.save((saveErr) => {
                 if (saveErr) {
@@ -347,11 +364,16 @@ router.post('/forgot-password', async (req, res) => {
             // Generate 6-digit OTP
             const code = randomInt(100000, 1000000).toString();
 
-            // Delete old OTPs for this email
-            await OTP.deleteMany({ email: normalizedEmail });
+            const purpose = 'password-reset';
+            await OTP.deleteMany({ email: normalizedEmail, purpose });
 
             // Save new OTP (expires in 10 minutes)
-            await OTP.create({ email: normalizedEmail, code, expiresAt: new Date(Date.now() + 10 * 60 * 1000) });
+            await OTP.create({
+                email: normalizedEmail,
+                codeHash: hashOtp(normalizedEmail, purpose, code),
+                purpose,
+                expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+            });
 
             // Send email
             const emailHtml = `
@@ -403,12 +425,13 @@ router.post('/reset-password', async (req, res) => {
             return res.status(400).json({ error: passwordCheck.errors[0] });
         }
 
-        const user = await User.findOne({ email: normalizedEmail });
+        const user = await User.findOne({ email: normalizedEmail }).select('+sessionVersion');
         if (!user) {
             return res.status(404).json({ error: 'If an account with that email exists, a password reset code has been sent.' });
         }
 
         user.password = newPassword;
+        user.sessionVersion = (user.sessionVersion || 0) + 1;
         await user.save();
 
         delete req.session.resetEmail;
@@ -433,19 +456,9 @@ router.post('/verify-reset-otp', async (req, res) => {
 
         const normalizedEmail = email.trim().toLowerCase();
 
-        const otpRecord = await OTP.findOne({
-            email: normalizedEmail,
-            code,
-            expiresAt: { $gt: new Date() },
-            used: false
-        });
-
-        if (!otpRecord) {
+        if (!await consumeOtp(normalizedEmail, 'password-reset', code)) {
             return res.status(400).json({ error: 'Invalid or expired code' });
         }
-
-        otpRecord.used = true;
-        await otpRecord.save();
 
         req.session.resetEmail = normalizedEmail;
         req.session.resetVerifiedAt = Date.now();
@@ -464,5 +477,4 @@ router.post('/verify-reset-otp', async (req, res) => {
     }
 });
 
-console.log('Routes registered:', router.stack.map(r => r.route?.path).filter(Boolean));
-    module.exports = router;
+module.exports = router;

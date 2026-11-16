@@ -41,6 +41,11 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    sessionVersion: {
+        type: Number,
+        default: 0,
+        select: false
+    },
     otp: {
         type: String
     },
@@ -68,7 +73,6 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 module.exports = mongoose.model('User', userSchema);
-
 
 
 

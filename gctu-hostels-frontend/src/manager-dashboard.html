@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard | GCTU StudentHostels</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { color-scheme: light; --ink: #183044; --muted: #687b89; --blue: #2b5f8a; --teal: #1f8a7c; --gold: #f4a261; --line: #e5ebee; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #f3f6f7; color: var(--ink); font-family: Inter, sans-serif; }
+        header { background: white; border-bottom: 1px solid var(--line); }
+        .nav, main { width: min(1120px, calc(100% - 40px)); margin: auto; }
+        .nav { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+        .brand { color: var(--blue); font-size: 19px; font-weight: 800; text-decoration: none; }
+        .brand span { color: var(--gold); }
+        .nav-actions { display: flex; align-items: center; gap: 18px; }
+        a { color: var(--blue); }
+        button, .button { border: 0; border-radius: 10px; background: var(--blue); color: white; font: inherit; font-weight: 700; padding: 11px 16px; text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+        button:disabled { opacity: .6; cursor: wait; }
+        .button.secondary { color: var(--blue); background: #eaf1f5; }
+        .button.danger, button.danger { background: #b44545; }
+        main { padding: 38px 0 64px; }
+        .welcome { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
+        h1 { margin: 0 0 8px; font-size: clamp(26px, 4vw, 36px); }
+        .subtitle, .muted { color: var(--muted); }
+        .subtitle { margin: 0; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+        .stat, .panel { background: white; border: 1px solid var(--line); border-radius: 16px; }
+        .stat { padding: 20px; }
+        .stat-label { color: var(--muted); font-size: 13px; font-weight: 600; }
+        .stat-value { display: block; margin-top: 8px; font-size: 28px; font-weight: 800; }
+        .panel { overflow: hidden; }
+        .panel-head { padding: 20px 22px; display: flex; justify-content: space-between; align-items: center; gap: 16px; border-bottom: 1px solid var(--line); }
+        h2 { margin: 0; font-size: 19px; }
+        #status { padding: 14px 22px; color: var(--muted); }
+        .listing { display: grid; grid-template-columns: 150px minmax(0, 1fr) auto; align-items: center; gap: 18px; padding: 18px 22px; border-bottom: 1px solid var(--line); }
+        .listing:last-child { border-bottom: 0; }
+        .listing img { width: 150px; height: 100px; border-radius: 11px; object-fit: cover; background: #eaf1f5; }
+        .listing h3 { margin: 0 0 7px; font-size: 17px; }
+        .listing p { margin: 4px 0; color: var(--muted); font-size: 13px; }
+        .badge { display: inline-block; margin-top: 6px; border-radius: 99px; padding: 5px 9px; color: #176957; background: #e5f4ed; font-size: 12px; font-weight: 700; }
+        .badge.unavailable { color: #8a4c26; background: #fff0e4; }
+        .actions { display: flex; flex-direction: column; gap: 8px; }
+        .actions .button, .actions button { min-width: 90px; padding: 9px 12px; font-size: 13px; }
+        .empty { text-align: center; padding: 44px 20px; }
+        .empty h3 { margin: 0 0 8px; }
+        @media (max-width: 700px) {
+            .nav, main { width: min(100% - 28px, 1120px); }
+            .welcome { align-items: start; flex-direction: column; }
+            .stats { grid-template-columns: 1fr; gap: 10px; }
+            .stat { padding: 15px 18px; }
+            .stat-value { font-size: 23px; }
+            .listing { grid-template-columns: 88px minmax(0, 1fr); gap: 12px; padding: 15px; }
+            .listing img { width: 88px; height: 88px; }
+            .actions { grid-column: 1 / -1; flex-direction: row; }
+            .actions > * { flex: 1; }
+            .panel-head { padding: 17px 15px; }
+            .nav-actions { gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="nav">
+            <a class="brand" href="manager-dashboard.html">GCTU<span> StudentHostels</span></a>
+            <div class="nav-actions">
+                <a href="manager-listings-preview.html">Preview my listings</a>
+                <button id="logoutButton" class="button secondary" type="button">Log out</button>
+            </div>
+        </nav>
+    </header>
+    <main>
+        <section class="welcome">
+            <div>
+                <h1>Manager dashboard</h1>
+                <p class="subtitle">Welcome, <strong id="managerName">Manager</strong>. Manage your published hostel listings.</p>
+            </div>
+            <a class="button" href="add-hostel.html">+ Add a hostel</a>
+        </section>
+        <section class="stats" aria-label="Listing summary">
+            <div class="stat"><span class="stat-label">Your listings</span><strong class="stat-value" id="listingCount">—</strong></div>
+            <div class="stat"><span class="stat-label">Available</span><strong class="stat-value" id="availableCount">—</strong></div>
+            <div class="stat"><span class="stat-label">Unavailable</span><strong class="stat-value" id="unavailableCount">—</strong></div>
+        </section>
+        <section class="panel">
+            <div class="panel-head">
+                <h2>Your hostel listings</h2>
+                <button id="refreshButton" class="button secondary" type="button">Refresh</button>
+            </div>
+            <div id="status" role="status">Loading your listings…</div>
+            <div id="listingList"></div>
+        </section>
+    </main>
+    <script src="config.js"></script>
+    <script>
+        const listingList = document.getElementById('listingList');
+        const statusBox = document.getElementById('status');
+        const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[char]);
+
+        async function verifyManager() {
+            const response = await fetch(`${API_CONFIG.AUTH_API}/me`, { credentials: 'include', cache: 'no-store' });
+            if (!response.ok) {
+                window.location.replace('login.html?role=manager');
+                return false;
+            }
+            const { user } = await response.json();
+            if (user?.role !== 'manager') {
+                window.location.replace(user?.role === 'student' ? 'dashboard.html' : 'login.html?role=manager');
+                return false;
+            }
+            document.getElementById('managerName').textContent = user.fullName || user.username || 'Manager';
+            return true;
+        }
+
+        function renderListings(hostels) {
+            document.getElementById('listingCount').textContent = hostels.length;
+            document.getElementById('availableCount').textContent = hostels.filter(hostel => hostel.isAvailable !== false).length;
+            document.getElementById('unavailableCount').textContent = hostels.filter(hostel => hostel.isAvailable === false).length;
+            listingList.replaceChildren();
+
+            if (!hostels.length) {
+                statusBox.hidden = true;
+                listingList.innerHTML = '<div class="empty"><h3>No listings yet</h3><p class="muted">Add your first hostel to make it visible to students.</p><a class="button" href="add-hostel.html">Add a hostel</a></div>';
+                return;
+            }
+
+            statusBox.hidden = true;
+            hostels.forEach(hostel => {
+                const item = document.createElement('article');
+                item.className = 'listing';
+                const available = hostel.isAvailable !== false;
+                let imageUrl = '';
+                try {
+                    const parsedImageUrl = new URL(hostel.coverImage);
+                    if (parsedImageUrl.protocol === 'https:' || parsedImageUrl.protocol === 'http:') {
+                        imageUrl = parsedImageUrl.href;
+                    }
+                } catch {
+                    imageUrl = '';
+                }
+                item.innerHTML = `
+                    <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(hostel.name)}" loading="lazy">
+                    <div>
+                        <h3>${escapeHtml(hostel.name)}</h3>
+                        <p>${escapeHtml(hostel.location)} · GHS ${Number(hostel.price).toLocaleString()} ${escapeHtml(hostel.paymentTerm || '')}</p>
+                        <span class="badge ${available ? '' : 'unavailable'}">${available ? 'Available' : 'Unavailable'}</span>
+                    </div>
+                    <div class="actions">
+                        <a class="button secondary" href="add-hostel.html?edit=${encodeURIComponent(hostel._id)}">Edit</a>
+                        <button class="danger" type="button" data-delete-id="${escapeHtml(hostel._id)}">Delete</button>
+                    </div>`;
+                listingList.append(item);
+            });
+        }
+
+        async function loadListings() {
+            statusBox.hidden = false;
+            statusBox.textContent = 'Loading your listings…';
+            try {
+                const response = await fetch(`${API_CONFIG.HOSTEL_API}/mine`, { credentials: 'include', cache: 'no-store' });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.error || 'Unable to load your listings.');
+                renderListings(result.data);
+            } catch (error) {
+                statusBox.hidden = false;
+                statusBox.textContent = error.message || 'Unable to load your listings. Please try again.';
+            }
+        }
+
+        listingList.addEventListener('click', async event => {
+            const button = event.target.closest('[data-delete-id]');
+            if (!button) return;
+            const listing = button.closest('.listing');
+            const name = listing?.querySelector('h3')?.textContent || 'this hostel';
+            if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
+            button.disabled = true;
+            try {
+                const response = await fetch(`${API_CONFIG.HOSTEL_API}/${encodeURIComponent(button.dataset.deleteId)}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.error || 'Unable to delete this listing.');
+                await loadListings();
+            } catch (error) {
+                window.alert(error.message || 'Unable to delete this listing.');
+                button.disabled = false;
+            }
+        });
+
+        document.getElementById('refreshButton').addEventListener('click', loadListings);
+        document.getElementById('logoutButton').addEventListener('click', async () => {
+            try {
+                await fetch(`${API_CONFIG.AUTH_API}/logout`, { method: 'POST', credentials: 'include' });
+            } finally {
+                window.location.replace('login.html?role=manager');
+            }
+        });
+
+        verifyManager().then(isManager => isManager && loadListings()).catch(error => {
+            console.error('Manager session check failed:', error);
+            window.location.replace('login.html?role=manager');
+        });
+    </script>
+</body>
+</html>

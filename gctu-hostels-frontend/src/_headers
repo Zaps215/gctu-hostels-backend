@@ -1,0 +1,7 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'sha256-lzTYNItfsr7nMX9fMttQNggGVJ2807OUi/OxLmnHCEw=' 'sha256-bzI8sClltr/UZcl5U0OQ7Sh//RdEbkl2jZjeMy5PPc8=' 'sha256-ko7HkZo473amTnNKi+d91vzkbyZ/aJzZvRGZvLWjRUQ=' 'sha256-oc5FXRKRSD1fuypljnHu3ZiuLpm1mH0hprT7WrCstpo=' 'sha256-BbzvuhoQJEe24gKFUxOHYMLCPaJSNJNHztTlcoLIUJE=' 'sha256-cv7/gJNCiSwtGSgR2FOSIyS6gDuVb7BsKAs7T6C+crk='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' https: http: data:; connect-src 'self' https://gctu-hostels-backend.onrender.com http://localhost:5000 http://127.0.0.1:5000

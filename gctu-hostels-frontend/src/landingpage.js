@@ -2,8 +2,6 @@
 // GCTU HOSTELS - LIVE API INTEGRATED CLIENT
 // ==========================================
 
-const API_URL = API_CONFIG.HOSTEL_API;
-
 // Global state holding live database records
 let allHostels = [];
 let currentFilter = "all";
@@ -75,9 +73,9 @@ function renderAmenityFilters() {
         .sort((a, b) => a.localeCompare(b)))];
 
     container.innerHTML = `
-        <button class="filter-btn active" type="button" data-amenity="" aria-pressed="true">Any</button>
+        <button class="filter-btn ${selectedAmenities.size === 0 ? 'active' : ''}" type="button" data-amenity="" aria-pressed="${selectedAmenities.size === 0}">Any</button>
         ${amenities.map(amenity => `
-            <button class="filter-btn" type="button" data-amenity="${escapeHtml(amenity)}" aria-pressed="false">
+            <button class="filter-btn ${selectedAmenities.has(amenity.toLowerCase()) ? 'active' : ''}" type="button" data-amenity="${escapeHtml(amenity)}" aria-pressed="${selectedAmenities.has(amenity.toLowerCase())}">
                 ${escapeHtml(amenity)}
             </button>
         `).join('')}
@@ -85,12 +83,14 @@ function renderAmenityFilters() {
 }
 
 // Fetch hostels from MongoDB backend API
-async function loadHostelsFromAPI() {
+let hostelsRefreshInProgress = false;
+async function loadHostelsFromAPI({ quiet = false } = {}) {
     const grid = document.getElementById("hostelsGrid");
-    if (!grid) return;
+    if (!grid || hostelsRefreshInProgress) return;
+    hostelsRefreshInProgress = true;
 
     // Show loading state matching your card layout
-    grid.innerHTML = `
+    if (!quiet) grid.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; padding: 60px; color: #666;">
             <i class="fas fa-spinner fa-spin fa-2x"></i>
             <p style="margin-top: 10px;">Loading verified GCTU student housing from database...</p>
@@ -98,19 +98,14 @@ async function loadHostelsFromAPI() {
     `;
 
     try {
-        const response = await fetch(API_URL);
-        const result = await response.json();
-
-        if (response.ok && result.success && Array.isArray(result.data)) {
-            allHostels = result.data;
-            renderAmenityFilters();
-            renderHostels();
-        } else {
-            grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px;">Unable to load hostels right now.</div>`;
-        }
+        allHostels = await fetchAllHostels();
+        renderAmenityFilters();
+        renderHostels();
     } catch (error) {
         console.error('Failed to fetch hostels:', error);
-        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px; color: #e74c3c;">⚠️ Unable to connect to GCTU Hostels server. Please try again later.</div>`;
+        if (!quiet) grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:60px; color: #e74c3c;">⚠️ Unable to connect to GCTU Hostels server. Please try again later.</div>`;
+    } finally {
+        hostelsRefreshInProgress = false;
     }
 }
 
@@ -237,6 +232,12 @@ function renderTestimonials() {
 
 // Event listeners for filters and search
 function setupEventListeners() {
+    document.querySelectorAll("button[data-navigation]").forEach(button => {
+        button.addEventListener("click", () => {
+            window.location.href = button.dataset.navigation;
+        });
+    });
+
     const filterBtns = document.querySelectorAll("#filterGroup .filter-btn");
     filterBtns.forEach(btn => {
         btn.addEventListener("click", () => {
@@ -309,7 +310,7 @@ async function checkUserSession() {
             const data = await response.json();
             const user = data?.user;
             const dashboardUrl = user?.role === 'manager'
-                ? '/add-hostel.html'
+                ? '/manager-dashboard.html'
                 : user?.role === 'student'
                     ? '/dashboard.html'
                     : null;
@@ -352,6 +353,9 @@ async function checkUserSession() {
 document.addEventListener("DOMContentLoaded", () => {
     checkUserSession(); //  session check
     loadHostelsFromAPI();
+    window.setInterval(() => {
+        if (document.visibilityState === 'visible') loadHostelsFromAPI({ quiet: true });
+    }, 30000);
     renderTestimonials();
     setupEventListeners();
 });

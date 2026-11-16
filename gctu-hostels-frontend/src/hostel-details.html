@@ -274,7 +274,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const hostelId = urlParams.get('id');
 
-        async function fetchHostelDetails() {
+        async function fetchHostelDetails({ recordView = true, quiet = false } = {}) {
             const container = document.getElementById('detailsContainer');
 
             if (!hostelId) {
@@ -286,16 +286,18 @@
                 return;
             }
 
-            // Record unique view locally for the dashboard counter
-            logHostelView(hostelId);
+            if (recordView) {
+                logHostelView(hostelId);
+            }
 
             try {
-                const response = await fetch(`${HOSTEL_API_URL}/${hostelId}`);
+                const response = await fetch(`${HOSTEL_API_URL}/${encodeURIComponent(hostelId)}`, { cache: 'no-store' });
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    renderHostel(result.data);
+                    await renderHostel(result.data, { recordView });
                 } else {
+                    if (quiet) return;
                     container.innerHTML = `
                         <div style="text-align: center; padding: 60px;">
                             <h2>Unable to load hostel details</h2>
@@ -304,7 +306,7 @@
                 }
             } catch (error) {
                 console.error('Error fetching hostel details:', error);
-                container.innerHTML = `<div style="text-align: center; padding: 60px;">Error connecting to server.</div>`;
+                if (!quiet) container.innerHTML = `<div style="text-align: center; padding: 60px;">Error connecting to server.</div>`;
             }
         }
 
@@ -312,7 +314,13 @@
         function logHostelView(id) {
             if (!id) return; 
 
-            let explored = JSON.parse(localStorage.getItem('exploredHostels')) || [];
+            let explored = [];
+            try {
+                const storedExplored = JSON.parse(localStorage.getItem('exploredHostels') || '[]');
+                if (Array.isArray(storedExplored)) explored = storedExplored;
+            } catch (error) {
+                console.warn('Ignoring invalid explored-hostel browser data:', error);
+            }
 
             // Only add the hostel ID if it hasn't been recorded yet
             if (!explored.includes(id)) {
@@ -321,12 +329,14 @@
             }
         }
 
-        async function renderHostel(hostel) {
-            try {
-                await logUserActivity('viewed_hostel', { hostelId: hostel._id });
-            } catch (error) {
-                if (error.status !== 401) {
-                    console.error('Unable to record hostel view:', error);
+        async function renderHostel(hostel, { recordView = true } = {}) {
+            if (recordView) {
+                try {
+                    await logUserActivity('viewed_hostel', { hostelId: hostel._id });
+                } catch (error) {
+                    if (error.status !== 401) {
+                        console.error('Unable to record hostel view:', error);
+                    }
                 }
             }
 
@@ -451,6 +461,11 @@
 
         // Fetch hostel details on load
         fetchHostelDetails();
+        window.setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                fetchHostelDetails({ recordView: false, quiet: true });
+            }
+        }, 30000);
     
     </script>
 </body>

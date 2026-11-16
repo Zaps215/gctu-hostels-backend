@@ -1,24 +1,28 @@
+require('dotenv').config();
+
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+    throw new Error('SESSION_SECRET must be configured before starting the server.');
+}
+
 const express = require('express');
 const session = require('express-session');
-const mongoStore = require('connect-mongo');
+const { RedisStore: RedisSessionStore } = require('connect-redis');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { RedisStore: RedisRateLimitStore } = require('rate-limit-redis');
 const mongoSanitize = require('express-mongo-sanitize');
 const hpp = require('hpp');
 const hostelRoutes = require('./routes/hostelRoutes');
 const userDataRoutes = require('./routes/userDataRoutes');
 const allowedOrigins = require('./config/allowedOrigins');
 const requireTrustedOrigin = require('./middleware/requireTrustedOrigin');
-require('dotenv').config();
-
 const connectDB = require('./config/db');
+const { connectRedis, redisClient } = require('./config/redis');
 
 //sitemap for gsc
 const sitemapRoute = require('./routes/sitemap');
-
-// Connect to database
-connectDB();
 
 const app = express();
 
@@ -70,12 +74,10 @@ app.use(cors({
 
 // Session middleware (FIXED syntax)
 app.use(session({
-    secret: process.env.SESSION_SECRET,
+    store: new RedisSessionStore({ client: redisClient, prefix: 'gctu:session:' }),
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    store: mongoStore.create({
-        mongoUrl: process.env.MONGO_URI
-    }),
     cookie: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', //True on live site, false locally
@@ -96,6 +98,10 @@ const globalLimiter = rateLimit({
     max: 100, // Limit each IP to 100 requests per windowMs
     standardHeaders: true,
     legacyHeaders: false,
+    store: new RedisRateLimitStore({
+        prefix: 'gctu:rate-limit:global:',
+        sendCommand: (...args) => redisClient.sendCommand(args)
+    }),
     message: { error: 'Too many requests from this IP, please try again later.' }
 });
 
@@ -105,6 +111,10 @@ const authLimiter = rateLimit({
     max: 10, // Max 10 attempts per IP per 15 minutes
     standardHeaders: true,
     legacyHeaders: false,
+    store: new RedisRateLimitStore({
+        prefix: 'gctu:rate-limit:auth:',
+        sendCommand: (...args) => redisClient.sendCommand(args)
+    }),
     message: { error: 'Too many authentication attempts. Please try again after 15 minutes.' }
 });
 
@@ -152,6 +162,14 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+async function startServer() {
+    await Promise.all([connectRedis(), connectDB()]);
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
+
+startServer().catch(error => {
+    console.error('Unable to start server:', error);
+    process.exitCode = 1;
 });

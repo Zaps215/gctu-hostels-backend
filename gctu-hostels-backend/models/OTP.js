@@ -7,9 +7,19 @@ const OTPSchema = new mongoose.Schema({
         required: true,
         lowercase: true
     },
-    code: {
+    codeHash: {
         type: String,
         required: true
+    },
+    purpose: {
+        type: String,
+        required: true,
+        enum: ['signup', 'password-reset']
+    },
+    attempts: {
+        type: Number,
+        default: 0,
+        min: 0
     },
     expiresAt: {
         type: Date,
@@ -19,13 +29,9 @@ const OTPSchema = new mongoose.Schema({
     used: {
         type: Boolean,
         default: false
-    },
-    // Add this optional object to hold the data safely
-    signupData: {
-        fullName: { type: String },
-        username: { type: String },
-        password: { type: String } // Will be passed down and hashed on user save
     }
 });
+
+OTPSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 module.exports = mongoose.model('OTP', OTPSchema);

@@ -201,18 +201,18 @@
     <nav class="navbar">
         <div class="navbar-inner">
             <div class="logo">
-                <a href="homepage.html">GCTU<span>StudentHostels</span></a>
+                <a href="manager-dashboard.html">GCTU<span>StudentHostels</span></a>
             </div>
             <div class="nav-actions">
-                <a href="homepage.html" class="btn-back">← Exit to Homepage</a>
+                <a href="manager-dashboard.html" class="btn-back">← Back to Manager Dashboard</a>
             </div>
         </div>
     </nav>
 
     <div class="container">
         <div class="card">
-            <h1>Publish New Hostel</h1>
-            <p class="subtitle">Fill out the property details below to list your hostel for GCTU students.</p>
+            <h1 id="formTitle">Publish New Hostel</h1>
+            <p class="subtitle" id="formSubtitle">Fill out the property details below to list your hostel for GCTU students.</p>
 
             <div id="formAlert" class="alert"></div>
 
@@ -247,6 +247,14 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label for="isAvailable">Availability</label>
+                    <select id="isAvailable">
+                        <option value="true">Available</option>
+                        <option value="false">Unavailable</option>
+                    </select>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="coverImage">Cover Image URL *</label>
@@ -277,39 +285,64 @@
     <script>
         const AUTH_API_URL = API_CONFIG.AUTH_API;
         const HOSTEL_API_URL = API_CONFIG.HOSTEL_API;
+        const editId = new URLSearchParams(window.location.search).get('edit');
+        const submitButton = document.getElementById('submitBtn');
 
         // 1. Verify Manager Authorization on Load
         async function verifyManager() {
             try {
                 const response = await fetch(`${AUTH_API_URL}/me`, { credentials: 'include' });
                 if (!response.ok) {
-                    window.location.href = 'login.html';
-                    return;
+                    window.location.href = 'login.html?role=manager';
+                    return false;
                 }
                 const data = await response.json();
                 const user = data.user || data;
 
                 if (user.role !== 'manager') {
                     alert('Unauthorized: Only verified hostel managers can access this portal.');
-                    window.location.href = 'homepage.html';
+                    window.location.href = user.role === 'student' ? 'dashboard.html' : 'login.html?role=manager';
+                    return false;
                 }
+                return true;
             } catch (error) {
                 console.error('Auth verification error:', error);
-                window.location.href = 'login.html';
+                window.location.href = 'login.html?role=manager';
+                return false;
             }
         }
-
-        verifyManager();
 
         // 2. Handle Form Submission
         const form = document.getElementById('addHostelForm');
         const alertBox = document.getElementById('formAlert');
 
+        async function loadListingForEdit() {
+            if (!editId) return;
+            document.getElementById('formTitle').textContent = 'Edit Hostel Listing';
+            document.getElementById('formSubtitle').textContent = 'Update your hostel details. Changes will be visible to students immediately.';
+            submitButton.textContent = 'Save Changes';
+
+            const response = await fetch(`${HOSTEL_API_URL}/mine/${encodeURIComponent(editId)}`, {
+                credentials: 'include',
+                cache: 'no-store'
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Unable to load this hostel listing.');
+            }
+
+            const hostel = result.data;
+            for (const field of ['name', 'location', 'distanceFromCampus', 'price', 'paymentTerm', 'isAvailable', 'coverImage', 'contactPhone', 'description']) {
+                const input = document.getElementById(field);
+                if (input && hostel[field] != null) input.value = String(hostel[field]);
+            }
+            document.getElementById('amenities').value = (hostel.amenities || []).join(', ');
+        }
+
         form.onsubmit = async (e) => {
             e.preventDefault();
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Publishing...';
+            submitButton.disabled = true;
+            submitButton.textContent = editId ? 'Saving…' : 'Publishing...';
             alertBox.style.display = 'none';
 
             // Gather form data
@@ -319,6 +352,7 @@
                 distanceFromCampus: document.getElementById('distanceFromCampus').value.trim(),
                 price: Number(document.getElementById('price').value),
                 paymentTerm: document.getElementById('paymentTerm').value,
+                isAvailable: document.getElementById('isAvailable').value === 'true',
                 coverImage: document.getElementById('coverImage').value.trim(),
                 contactPhone: document.getElementById('contactPhone').value.trim(),
                 amenities: document.getElementById('amenities').value.split(',').map(a => a.trim()).filter(Boolean),
@@ -326,8 +360,8 @@
             };
 
             try {
-                const response = await fetch(HOSTEL_API_URL, {
-                    method: 'POST',
+                const response = await fetch(editId ? `${HOSTEL_API_URL}/${encodeURIComponent(editId)}` : HOSTEL_API_URL, {
+                    method: editId ? 'PUT' : 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
                     body: JSON.stringify(hostelData)
@@ -337,10 +371,12 @@
 
                 if (response.ok && result.success) {
                     alertBox.className = 'alert alert-success';
-                    alertBox.textContent = 'Hostel successfully published! Redirecting to homepage...';
+                    alertBox.textContent = editId
+                        ? 'Hostel listing updated! Students can now see your changes. Returning to dashboard…'
+                        : 'Hostel successfully published! Returning to manager dashboard…';
                     alertBox.style.display = 'block';
                     setTimeout(() => {
-                        window.location.href = 'homepage.html';
+                        window.location.href = 'manager-dashboard.html';
                     }, 1500);
                 } else {
                     throw new Error(result.message || 'Failed to publish hostel listing.');
@@ -350,10 +386,20 @@
                 alertBox.className = 'alert alert-error';
                 alertBox.textContent = error.message || 'Error connecting to server. Please try again.';
                 alertBox.style.display = 'block';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Publish Hostel Listing';
+                submitButton.disabled = false;
+                submitButton.textContent = editId ? 'Save Changes' : 'Publish Hostel Listing';
             }
         };
+
+        verifyManager().then(isManager => {
+            if (!isManager) return;
+            return loadListingForEdit().catch(error => {
+                alertBox.className = 'alert alert-error';
+                alertBox.textContent = error.message || 'Unable to load this hostel listing.';
+                alertBox.style.display = 'block';
+                form.hidden = true;
+            });
+        });
     </script>
 </body>
 </html>

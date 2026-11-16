@@ -100,7 +100,7 @@ loginForm.addEventListener('submit', async function(e) {
             }
 
             // Dynamic redirect based on database role
-            const targetRedirect = userRole === 'manager' ? 'add-hostel.html' : 'homepage.html';
+            const targetRedirect = userRole === 'manager' ? 'manager-dashboard.html' : 'homepage.html';
             const loginPopup = document.getElementById('loginPopup');
             const popupMessage = document.getElementById('popupMessage');
 

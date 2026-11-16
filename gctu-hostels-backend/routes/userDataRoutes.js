@@ -4,7 +4,6 @@ const Activity = require('../models/Activity');
 const Favorite = require('../models/Favorite');
 const Hostel = require('../models/Hostel');
 const isAuthenticated = require('../middleware/auth');
-
 const router = express.Router();
 const activityTypes = new Set([
     'viewed_hostel',
@@ -107,6 +106,7 @@ router.get('/dashboard', async (req, res) => {
 
 router.get('/favorites', async (req, res) => {
     try {
+        res.set('Cache-Control', 'no-store');
         const favorites = await Favorite.find({ user: req.session.userId })
             .populate('hostel')
             .sort({ createdAt: -1 })
@@ -155,7 +155,7 @@ router.post('/activity', async (req, res) => {
             const viewedActivity = await Activity.findOneAndUpdate(
                 activity,
                 { $setOnInsert: activity },
-                { upsert: true, new: true, setDefaultsOnInsert: true }
+                { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
             );
             return res.status(200).json({ success: true, id: viewedActivity._id });
         }

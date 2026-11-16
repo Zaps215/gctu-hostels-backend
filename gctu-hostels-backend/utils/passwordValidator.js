@@ -1,6 +1,14 @@
 function validatePassword(password) {
     const errors = [];
-    
+
+    if (typeof password !== 'string') {
+        return { isValid: false, errors: ['Password must be a string'] };
+    }
+
+    if (Buffer.byteLength(password, 'utf8') > 72) {
+        errors.push('Password must be no more than 72 bytes');
+    }
+
     if (password.length < 8) {
         errors.push('Password must be at least 8 characters');
     }

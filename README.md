@@ -22,6 +22,7 @@ GCTU StudentHostels helps students browse accommodation near campus, compare hos
 - **Email-verified accounts:** Register and reset a password using one-time codes delivered through Brevo.
 - **Session-based authentication:** Login, logout, current-user lookup, and protected user-specific API routes.
 - **Saved hostels:** Save and remove favorites; records are associated with the authenticated account.
+- **Manager dashboard:** Provisioned managers can create, edit, and delete only their own listings; student discovery pages refresh listing data automatically while open.
 - **Activity and dashboard:** Record successful logins, hostel views, searches, and contact actions. Repeat visits to a hostel are stored and counted as one explored hostel; each successful login is recorded once.
 - **Responsive interface:** Static pages built with HTML, CSS, and vanilla JavaScript.
 
@@ -32,7 +33,7 @@ GCTU StudentHostels helps students browse accommodation near campus, compare hos
 | Frontend | HTML5, CSS3, vanilla JavaScript, Font Awesome |
 | API | Node.js 20.18.0, Express 5 |
 | Database | MongoDB Atlas or MongoDB, Mongoose |
-| Authentication | `express-session`, `connect-mongo`, `bcryptjs` |
+| Authentication and shared state | `express-session`, `connect-redis`, `rate-limit-redis`, `bcryptjs` |
 | Email | Brevo transactional email API |
 | Deployment | Netlify (frontend), Render (backend) |
 
@@ -42,7 +43,7 @@ GCTU StudentHostels helps students browse accommodation near campus, compare hos
 .
 ├── docs/                         # Product, technical, UX, and development plans
 ├── gctu-hostels-backend/
-│   ├── config/                   # MongoDB and email configuration
+│   ├── config/                   # MongoDB, Redis, and email configuration
 │   ├── middleware/               # Authentication middleware
 │   ├── models/                   # User, hostel, favorite, activity, and OTP models
 │   ├── routes/                   # Authentication, hostel, sitemap, and user-data routes
@@ -61,6 +62,7 @@ GCTU StudentHostels helps students browse accommodation near campus, compare hos
 - Node.js **20.18.0** (the version in `gctu-hostels-backend/.node-version`)
 - npm
 - A MongoDB database (local or MongoDB Atlas)
+- A Redis server (local or hosted)
 - A Brevo API key for email verification and password-reset emails
 
 ### 1. Clone the repository
@@ -83,12 +85,14 @@ Create `gctu-hostels-backend/.env` with your own development credentials:
 PORT=5000
 NODE_ENV=development
 MONGO_URI=mongodb://127.0.0.1:27017/gctu-hostels
+REDIS_URL=redis://127.0.0.1:6379
 SESSION_SECRET=replace-with-a-long-random-secret
+OTP_SECRET=optional-dedicated-random-secret
 BREVO_API_KEY=your-brevo-api-key
 ADMIN_SECRET=replace-with-a-long-random-secret
 ```
 
-For MongoDB Atlas, use your Atlas connection URI as `MONGO_URI`. Do not commit `.env` or paste real credentials into issues, pull requests, or documentation.
+Redis stores login sessions and shared rate-limit counters. Start the local Redis service before the backend; in production, set `REDIS_URL` to a hosted TLS connection URL using `rediss://`. The backend waits for Redis and MongoDB before listening and does not fall back to in-memory sessions or rate limits. `SESSION_SECRET` is required. `OTP_SECRET` is optional; when omitted, OTP hashes use `SESSION_SECRET`. If set, use a separate long random secret. For MongoDB Atlas, use your Atlas connection URI as `MONGO_URI`. Do not commit `.env` or paste real credentials into issues, pull requests, or documentation.
 
 Start the API:
 
@@ -105,6 +109,7 @@ Serve `gctu-hostels-frontend/src/` using a local static server, such as the VS C
 Do not open the HTML files using a `file://` URL. The frontend uses browser cookies and API requests, so it should be served over HTTP.
 
 The API base URL is selected in `gctu-hostels-frontend/src/config.js`: local hostnames use the local backend, and other hostnames use the deployed Render API.
+Netlify reads `gctu-hostels-frontend/src/_headers` for the frontend security headers. If an inline script changes, update its matching SHA-256 source in that file so the script remains permitted by the content security policy.
 
 ### Optional: seed hostel data
 
@@ -151,13 +156,19 @@ Keep the secret out of source control, browser code, and client-side requests.
 |---|---|---|---|
 | `GET` | `/api/hostels` | Public | List hostels; accepts `search`, `gender`, `maxPrice`, `sort`, and `university` query parameters |
 | `GET` | `/api/hostels/:id` | Public | Return one hostel |
-| `POST` | `/api/hostels` | Session required | Create a hostel record |
+| `GET` | `/api/hostels/mine` | Manager session | List the signed-in manager's hostel listings |
+| `GET` | `/api/hostels/mine/:id` | Owning manager session | Get one of the manager's listings for editing |
+| `POST` | `/api/hostels` | Manager session | Create a hostel record owned by the signed-in manager |
+| `PUT` | `/api/hostels/:id` | Owning manager session | Update an owned listing; changes are immediately returned by public listing APIs |
+| `DELETE` | `/api/hostels/:id` | Owning manager session | Delete an owned listing |
 
 Example:
 
 ```text
-GET /api/hostels?search=Tesano&maxPrice=3000&sort=price-asc
+GET /api/hostels?search=Tesano&maxPrice=3000&sort=price-asc&page=1&limit=50
 ```
+
+Hostel search treats search text literally (up to 100 characters), and listing results are paginated with a maximum page size of 50. The response includes `pagination.page`, `pagination.limit`, `pagination.totalCount`, and `pagination.totalPages`; the public listing pages load all result pages to preserve their existing client-side filters.
 
 ### Favorites, activity, and dashboard
 
@@ -176,9 +187,9 @@ Session-protected requests from the frontend must include credentials (cookies);
 
 - Hostel browsing, favorites, and activity use MongoDB-backed API data.
 - Bookings and payment processing are **not implemented**; contact actions do not create bookings.
-- Hostel creation requires a logged-in manager session. Manager accounts are provisioned through the admin-secret-protected endpoint above.
+- Hostel management requires a logged-in manager session. Managers can only edit or delete listings they own. Changes are saved to MongoDB and public listing/detail pages refresh automatically about every 30 seconds while open. Manager accounts are provisioned through the admin-secret-protected endpoint above.
 - Search and discovery filters on the pages are applied client-side to the fetched hostel list.
-- No automated test suite is configured yet. Syntax checks and manual API smoke tests are not a substitute for regression or integration tests.
+- Run backend regression tests with `npm test --prefix gctu-hostels-backend`. These tests cover OTP handling, manager listing access, bounded hostel search, session revocation, and production Redis TLS configuration; they do not replace deployment or browser-level checks.
 
 See [PROJECT_PLAN.md](./PROJECT_PLAN.md) for the current roadmap and [docs/](./docs/) for product and technical documentation.
 
