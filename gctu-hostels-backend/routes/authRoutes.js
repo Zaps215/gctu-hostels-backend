@@ -10,6 +10,7 @@ const { sendEmail } = require('../config/email');
 const validatePassword = require('../utils/passwordValidator');
 const isAuthenticated = require('../middleware/auth');
 const verifyAdminSecret = require('../middleware/adminAuth');
+const { redisClient } = require('../config/redis');
 
 function saveSession(session) {
     return new Promise((resolve, reject) => {
@@ -290,10 +291,15 @@ router.post('/login', async (req, res) => {
             req.session.userRole = user.role;
             req.session.authVersion = user.sessionVersion || 0;
 
-            req.session.save((saveErr) => {
+            req.session.save(async (saveErr) => {
                 if (saveErr) {
                     console.error('Session save error:', saveErr);
                     return res.status(500).json({ error: 'Server error during login' });
+                }
+                try {
+                    await redisClient.sAdd(`user_sessions:${user._id}`, req.sessionID);
+                } catch (redisErr) {
+                    console.error('Failed to track session in Redis:', redisErr);
                 }
 
                 res.status(200).json({
